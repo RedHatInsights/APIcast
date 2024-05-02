@@ -64,7 +64,7 @@ function _M:access()
     ngx.log(ngx.INFO, "Rejecting request due to is invalid to retrieve the IP information")
     deny_request(self.error_msg)
     return
-  end 
+  end
 
   self:check_client_ip(client_ip)
 end

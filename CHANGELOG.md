@@ -9,6 +9,101 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+- Fixed 3scale Batcher policy unable to handle `app_id`/`access_token` contains special characters [PR #1457](https://github.com/3scale/APIcast/pull/1457) [THREESCALE-10934](https://issues.redhat.com/browse/THREESCALE-10934)
+
+## [3.15.0] 2024-04-04
+
+### Fixed
+
+- Fix GRPC on HTTP2 POST method [PR #1419](https://github.com/3scale/apicast/pull/1419) [THREESCALE-9976](https://issues.redhat.com/browse/THREESCALE-9976)
+
+- Fixed CVE-2023-44487 (HTTP/2 Rapid Reset) [PR #1417](https://github.com/3scale/apicast/pull/1417) [THREESCALE-10224](https://issues.redhat.com/browse/THREESCALE-10224)
+
+- Fixed issue where the proxy policy could not handle requests with "Transfer-Encoding: chunked" header [PR #1403](https://github.com/3scale/APIcast/pull/1403) [THREESCALE-9542](https://issues.redhat.com/browse/THREESCALE-9542)
+
+- Fixed custom-config.t conversion to APIcast::Blackbox [PR #1425](https://github.com/3scale/APIcast/pull/1425)
+
+- Fixed resty-ctx.t conversion to APIcast::Blackbox [PR #1424](https://github.com/3scale/APIcast/pull/1424)
+
+- Fixed backend-cache-handler.t conversion to APIcast::Blackbox [PR #1431](https://github.com/3scale/APIcast/pull/1431)
+
+- Fixed apicast-mapping-rules.t conversion to APIcast::Blackbox [PR #1430](https://github.com/3scale/APIcast/pull/1430)
+
+- gateway/src/apicast/http_proxy.lua: remove unused code [PR #1435](https://github.com/3scale/APIcast/pull/1435)
+
+- Fixed token instrospection field removed [PR #1438](https://github.com/3scale/APIcast/pull/1438) [THREESCALE-10591](https://issues.redhat.com/browse/THREESCALE-10591)
+
+- Fixed issue with URL was not correctly escaped when using the JWT claim check policy [THREESCALE-10308](https://issues.redhat.com/browse/THREESCALE-10308) [PR #1428](https://github.com/3scale/APIcast/pull/1428)
+
+- Fix upstream default port when HTTP_PROXY [PR #1440](https://github.com/3scale/APIcast/pull/1440)
+
+- Docker compose up instead of docker compose run [PR #1442](https://github.com/3scale/APIcast/pull/1442)
+
+- Fix integration of upstream connection policy with camel policy [PR #1443](https://github.com/3scale/APIcast/pull/1443) [THREESCALE-10582](https://issues.redhat.com/browse/THREESCALE-10582)
+
+- Upgrade lua-resty-http to 0.17.1 to fix 100 response header are not handled when using `HTTPS_PROXY` [PR #1434](https://github.com/3scale/APIcast/pull/1434) [THREESCALE-10278](https://issues.redhat.com/browse/THREESCALE-10278)
+
+- Replace luafilesystem-ffi with [luafilesystem](https://github.com/lunarmodules/luafilesystem) [PR #1445](https://github.com/3scale/APIcast/pull/1445) [THREESCALE-10662](https://issues.redhat.com/browse/THREESCALE-10662)
+
+- Fix "Upstream cannot be null" error in APIcast logs [PR #1449](https://github.com/3scale/APIcast/pull/1449) [THREESCALE-5225](https://issues.redhat.com/browse/THREESCALE-5225)
+
+- Fixed 3scale Batcher policy unable to handle base64 encoded `user_key` [PR #1453](https://github.com/3scale/APIcast/pull/1453) [THREESCALE-10934](https://issues.redhat.com/browse/THREESCALE-10934)
+
+- Update luacheck settings and fix issues reported [PR #1451](https://github.com/3scale/APIcast/pull/1451)
+
+- Disable \_G write guard warning [PR #1454](https://github.com/3scale/APIcast/pull/1454)
+
+### Added
+
+- Detect number of CPU shares when running on Cgroups V2 [PR #1410](https://github.com/3scale/apicast/pull/1410) [THREESCALE-10167](https://issues.redhat.com/browse/THREESCALE-10167)
+
+- Add support to use Basic Authentication with the forward proxy. [PR #1409](https://github.com/3scale/APIcast/pull/1409) [THREESCALE-4393](https://issues.redhat.com/browse/THREESCALE-4393)
+
+- Added request unbuffered policy [PR #1408](https://github.com/3scale/APIcast/pull/1408) [THREESCALE-9542](https://issues.redhat.com/browse/THREESCALE-9542)
+
+- Dev environment: keycloak [PR #1439](https://github.com/3scale/APIcast/pull/1439)
+
+- Dev environment: Camel proxy [PR #1441](https://github.com/3scale/APIcast/pull/1441)
+
+- Bump penlight to 1.31.1 [PR #1447](https://github.com/3scale/APIcast/pull/1447)
+
+- Added `APICAST_CLIENT_REQUEST_HEADER_BUFFERS` variable to allow configure of the NGINX `client_request_header_buffers` directive: [PR #1446](https://github.com/3scale/APIcast/pull/1446), [THREESCALE-10164](https://issues.redhat.com/browse/THREESCALE-10164)
+
+- Added the `APICAST_POLICY_BATCHER_SHARED_MEMORY_SIZE` variable to allow configuration of the batcher policy's share memory size. [PR #1452](https://github.com/3scale/APIcast/pull/1452), [THREESCALE-9537](https://issues.redhat.com/browse/THREESCALE-9537)
+
+## [3.14.0] 2023-07-25
+
+### Fixed
+
+- In boot mode on `init_worker` check configuration expiration [PR #1399](https://github.com/3scale/APIcast/pull/1399) [THREESCALE-9003](https://issues.redhat.com/browse/THREESCALE-9003)
+- Removes the warning message at the bootstrap [PR #1398](https://github.com/3scale/APIcast/pull/1398) [THREESCALE-7942](https://issues.redhat.com/browse/THREESCALE-7942)
+- Set NGiNX variable variables_hash_max_size to 2048 to avoid startup warning [PR #1395](https://github.com/3scale/APIcast/pull/1395) [THREESCALE-7941](https://issues.redhat.com/browse/THREESCALE-7941)
+- Dev environment on aarch64 host [PR #1381](https://github.com/3scale/APIcast/pull/1381)
+
+### Added
+
+- Doc: Policy Development Tutorial [PR #1384](https://github.com/3scale/APIcast/pull/1384)
+- Opentelemetry support. Opentracing is now deprecated [PR #1379](https://github.com/3scale/APIcast/pull/1379) [THREESCALE-7735](https://issues.redhat.com/browse/THREESCALE-7735)
+- `/admin/api/account/proxy_configs` endpoint for configuration loading [PR #1352](https://github.com/3scale/APIcast/pull/1352) [THREESCALE-8508](https://issues.redhat.com/browse/THREESCALE-8508)
+- Pagination of services and proxy config endpoints [PR #1397](https://github.com/3scale/APIcast/pull/1397) [THREESCALE-8373](https://issues.redhat.com/browse/THREESCALE-8373)
+- Upstream TLS v1.3 [PR #1400](https://github.com/3scale/APIcast/pull/1400) [THREESCALE-9193](https://issues.redhat.com/browse/THREESCALE-9193)
+- Updated policy list for v3.13.2 [PR #1404](https://github.com/3scale/APIcast/pull/1404)
+- Updated policy list for v3.14.0 [PR #1407](https://github.com/3scale/APIcast/pull/1407)
+
+### Removed
+
+- `APICAST_LOAD_SERVICES_WHEN_NEEDED` is dropped and the configuration is fetched "when needed" by default [PR #1352](https://github.com/3scale/APIcast/pull/1352) [THREESCALE-8508](https://issues.redhat.com/browse/THREESCALE-8508)
+
+## [3.13.2] 2023-02-21
+
+### Fixed
+
+- Fixed: OIDC jwt key verification [PR #1392](https://github.com/3scale/APIcast/pull/1392) [THREESCALE-9009](https://issues.redhat.com/browse/THREESCALE-9009)
+
+## [3.13.0] 2023-02-07
+
+### Fixed
+
 - Fixed NGINX filters policy error [PR #1339](https://github.com/3scale/APIcast/pull/1339) [THREESCALE-7349](https://issues.redhat.com/browse/THREESCALE-7349)
 - Fix to avoid uninitialized variables when request URI is too large [PR #1340](https://github.com/3scale/APIcast/pull/1340) [THREESCALE-7906](https://issues.redhat.com/browse/THREESCALE-7906)
 - Fixed issue where request path is stripped for proxied https requests [PR #1342](https://github.com/3scale/APIcast/pull/1342) [THREESCALE-8426](https://issues.redhat.com/browse/THREESCALE-8426)
@@ -17,6 +112,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed: JWKs without alg field cause the JWT validation process to fail [PR #1371](https://github.com/3scale/APIcast/pull/1371) [THREESCALE-8601](https://issues.redhat.com/browse/THREESCALE-8601)
 
 ### Added
+
+- Updated policy list [PR #1374](https://github.com/3scale/APIcast/pull/1374)
+
+## [3.12.2] 2023-02-21
+
+ - Fixed: OIDC jwt key verification [PR #1391](https://github.com/3scale/APIcast/pull/1391) [THREESCALE-9009](https://issues.redhat.com/browse/THREESCALE-9009)
 
 ## [3.12.0] 2022-07-07
 
@@ -56,6 +157,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed issues with OIDC filters [PR #1304](https://github.com/3scale/APIcast/pull/1304) [PR #1306](https://github.com/3scale/APIcast/pull/1306) [THREESCALE-6042](https://issues.redhat.com/browse/THREESCALE-6042)
 - Fixed issues with OIDC filters [PR #1304](https://github.com/3scale/APIcast/pull/1304) [THREESCALE-6042](https://issues.redhat.com/browse/THREESCALE-6042)
 - Fixed issues with Upstream MTLS certs [PR #1307](https://github.com/3scale/APIcast/pull/1307) [THREESCALE-7508](https://issues.redhat.com/browse/THREESCALE-7508)
+- Fixed warning messages [PR #1318](https://github.com/3scale/APIcast/pull/1318) [THREESCALE-7906](https://issues.redhat.com/browse/THREESCALE-7906)
+- Fixed dirty context [PR #1328](https://github.com/3scale/APIcast/pull/1328) [THREESCALE-8000](https://issues.redhat.com/browse/THREESCALE-8000) [THREESCALE-8007](https://issues.redhat.com/browse/THREESCALE-8007)
+- Fixed jwk alg confusion [PR #1329](https://github.com/3scale/APIcast/pull/1329) [THREESCALE-8249](https://issues.redhat.com/browse/THREESCALE-8249)
+- Fixed issue with resolving target server hostnames to IP when using CONNECT method [PR #1323](https://github.com/3scale/APIcast/pull/1323) [THREESCALE-7967](https://issues.redhat.com/browse/THREESCALE-7967)
+- Fixed issue with resolving target server hostnames to IPs when forwarding requests through http/s proxy [PR #1323](https://github.com/3scale/APIcast/pull/1323) [THREESCALE-7967](https://issues.redhat.com/browse/THREESCALE-7967)
+- Fixed dirty context [PR #1328](https://github.com/3scale/APIcast/pull/1328) [THREESCALE-8000](https://issues.redhat.com/browse/THREESCALE-8000) [THREESCALE-8007](https://issues.redhat.com/browse/THREESCALE-8007) [THREESCALE-8252](https://issues.redhat.com/browse/THREESCALE-8252)
+- Fixed dirty context (part 2 of PR #1328) when tls termination policy is in the policy chain [PR #1333](https://github.com/3scale/APIcast/pull/1333)
+- Fixed NGINX filters policy error [PR #1339](https://github.com/3scale/APIcast/pull/1339) [THREESCALE-7349](https://issues.redhat.com/browse/THREESCALE-7349)
+- Fix to avoid uninitialized variables when request URI is too large [PR #1340](https://github.com/3scale/APIcast/pull/1340) [THREESCALE-7906](https://issues.redhat.com/browse/THREESCALE-7906)
+- Fixed issue where request path is stripped for proxied https requests [PR #1342](https://github.com/3scale/APIcast/pull/1342) [THREESCALE-8426](https://issues.redhat.com/browse/THREESCALE-8426)
+- Bumped liquid-lua to version 0.2.0-2 [PR #1369](https://github.com/3scale/APIcast/pull/1369) - includes: [THREESCALE-8483](https://issues.redhat.com/browse/THREESCALE-8483) and [THREESCALE-8484](https://issues.redhat.com/browse/THREESCALE-8484)
+- New /admin/api/account/proxy_configs endpoint for configuration loading [PR #1352](https://github.com/3scale/APIcast/pull/1352) [THREESCALE-8508](https://issues.redhat.com/browse/THREESCALE-8508)
 
 ### Added
 
@@ -908,7 +1021,7 @@ Apart from the changes mentioned in this section, this version also includes the
 
 - Major rewrite using JSON configuration instead of code generation.
 
-[Unreleased]: https://github.com/3scale/apicast/compare/v3.10.0...HEAD
+[Unreleased]: https://github.com/3scale/apicast/compare/v3.15.0...HEAD
 [2.0.0]: https://github.com/3scale/apicast/compare/v0.2...v2.0.0
 [3.0.0-alpha1]: https://github.com/3scale/apicast/compare/v2.0.0...v3.0.0-alpha1
 [3.0.0-alpha2]: https://github.com/3scale/apicast/compare/v3.0.0-alpha1...v3.0.0-alpha2
@@ -965,3 +1078,8 @@ Apart from the changes mentioned in this section, this version also includes the
 [3.10.0]: https://github.com/3scale/apicast/compare/v3.10.0-beta1..v3.10.0
 [3.11.0]: https://github.com/3scale/apicast/compare/v3.10.0..v3.11.0
 [3.12.0]: https://github.com/3scale/apicast/compare/v3.11.0..v3.12.0
+[3.12.2]: https://github.com/3scale/apicast/compare/v3.12.0..v3.12.2
+[3.13.0]: https://github.com/3scale/apicast/compare/v3.12.2..v3.13.0
+[3.13.2]: https://github.com/3scale/apicast/compare/v3.13.0..v3.13.2
+[3.14.0]: https://github.com/3scale/apicast/compare/v3.13.2..v3.14.0
+[3.15.0]: https://github.com/3scale/apicast/compare/v3.14.0..v3.15.0

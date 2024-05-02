@@ -22,27 +22,48 @@ Now we assign to _false_ the elements of the array that do not have an OIDC
 config, so this test should not crash.
 --- env eval
 (
+  'THREESCALE_DEPLOYMENT_ENV' => 'production',
   'APICAST_CONFIGURATION_LOADER' => 'lazy',
   'THREESCALE_PORTAL_ENDPOINT' => "http://test:$ENV{TEST_NGINX_SERVER_PORT}"
 )
 --- upstream env
-location = /admin/api/services.json {
-    echo '
-    {
-      "services":[
-        { "service": { "id":1 } },
-        { "service": { "id":2 } },
-        { "service": { "id":3 } },
-        { "service": { "id":4 } },
-        { "service": { "id":5 } },
-        { "service": { "id":6 } },
-        { "service": { "id":7 } },
-        { "service": { "id":8 } },
-        { "service": { "id":9 } },
-        { "service": { "id":10 } },
-        { "service": { "id":11 } }
-      ]
-    }';
+location = /admin/api/account/proxy_configs/production.json {
+  content_by_lua_block {
+    local expected = { host = 'localhost', version = 'latest', page = '1', per_page = '500' }
+    require('luassert').same(expected, ngx.req.get_uri_args(0))
+
+    local proxy_configs_list = {}
+    for i = 1,10,1
+    do
+      table.insert(proxy_configs_list, {
+        proxy_config = {
+          content = {
+            id = i, backend_version =  1,
+            proxy = {
+              hosts = { "localhost" },
+              api_backend = 'http://test:$TEST_NGINX_SERVER_PORT/api/',
+              backend = { endpoint = 'http://test:$TEST_NGINX_SERVER_PORT' },
+              proxy_rules = { { pattern = '/', http_method = 'GET', metric_system_name = 'test', delta = 1 } }
+            }
+          }
+        }
+      })
+    end
+
+    table.insert(proxy_configs_list, {
+      proxy_config = {
+        content = {
+          id = 11,
+          proxy = { oidc_issuer_endpoint = 'http://test:$TEST_NGINX_SERVER_PORT/issuer/endpoint' }
+        }
+      }
+    })
+
+    local response = { proxy_configs = proxy_configs_list }
+
+    ngx.header.content_type = 'application/json;charset=utf-8'
+    ngx.say(require('cjson').encode(response))
+  }
 }
 
 location = /issuer/endpoint/.well-known/openid-configuration {
@@ -67,37 +88,6 @@ location = /jwks {
         ] }
     ]])
   }
-}
-
-location ~ /admin/api/services/([0-9]|10)/proxy/configs/production/latest.json {
-echo '
-{
-  "proxy_config": {
-    "content": {
-      "id": 1,
-      "backend_version": 1,
-      "proxy": {
-        "api_backend": "http://test:$TEST_NGINX_SERVER_PORT/api/",
-        "backend": {
-          "endpoint": "http://test:$TEST_NGINX_SERVER_PORT"
-        },
-        "proxy_rules": [
-          {
-            "pattern": "/",
-            "http_method": "GET",
-            "metric_system_name": "test",
-            "delta": 1
-          }
-        ]
-      }
-    }
-  }
-}
-';
-}
-
-location = /admin/api/services/11/proxy/configs/production/latest.json {
-echo '{ "proxy_config": { "content": { "proxy": { "oidc_issuer_endpoint": "http://test:$TEST_NGINX_SERVER_PORT/issuer/endpoint" } } } }';
 }
 
 location /transactions/authrep.xml {

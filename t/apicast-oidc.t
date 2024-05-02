@@ -313,7 +313,7 @@ my $jwt = encode_jwt(payload => {
 "Authorization: Bearer $jwt"
 --- no_error_log
 
-=== TEST 7: JWT verification fails when jwk.alg exists AND does not match jwt.header.alg 
+=== TEST 7: JWT verification fails when jwk.alg exists AND does not match jwt.header.alg
 (see THREESCALE-8249 for steps to generate tampered JWT. rsa.pub from fixtures used to sign)
 --- configuration env eval
 use JSON qw(to_json);
@@ -362,3 +362,81 @@ my $jwt = 'eyJraWQiOiJzb21la2lkIiwiYWxnIjoiSFMyNTYifQ.'.
 "Authorization: Bearer $jwt"
 --- error_log
 [jwt] alg mismatch
+
+=== TEST 8: Token was signed by a different key
+--- configuration env eval
+use JSON qw(to_json);
+
+to_json({
+  services => [{
+    id => 42,
+    backend_version => 'oauth',
+    backend_authentication_type => 'provider_key',
+    backend_authentication_value => 'fookey',
+    proxy => {
+        authentication_method => 'oidc',
+        oidc_issuer_endpoint => 'https://example.com/auth/realms/a',
+        api_backend => "http://test:$TEST_NGINX_SERVER_PORT/",
+        proxy_rules => [
+          { pattern => '/', http_method => 'GET', metric_system_name => 'hits', delta => 1  }
+        ]
+    }
+  }],
+  oidc => [{
+    issuer => 'https://example.com/auth/realms/a',
+    config => { id_token_signing_alg_values_supported => [ 'RS256' ] },
+    keys => { somekid => { pem => $::public_key, alg => 'RS256' } },
+  }]
+});
+--- request: GET /test
+--- error_code: 403
+--- more_headers eval
+use Crypt::JWT qw(encode_jwt);
+my $jwt = encode_jwt(payload => {
+  aud => 'something',
+  azp => 'appid',
+  sub => 'someone',
+  iss => 'https://example.com/auth/realms/b',
+  exp => time + 3600 }, key => \$::private_key, alg => 'RS256', extra_headers => { kid => 'otherkid' });
+"Authorization: Bearer $jwt"
+--- error_log
+[jwk] not found, token might belong to a different realm
+
+=== TEST 9: Token was signed by a different issuer
+--- configuration env eval
+use JSON qw(to_json);
+
+to_json({
+  services => [{
+    id => 42,
+    backend_version => 'oauth',
+    backend_authentication_type => 'provider_key',
+    backend_authentication_value => 'fookey',
+    proxy => {
+        authentication_method => 'oidc',
+        oidc_issuer_endpoint => 'https://example.com/auth/realms/apicast',
+        api_backend => "http://test:$TEST_NGINX_SERVER_PORT/",
+        proxy_rules => [
+          { pattern => '/', http_method => 'GET', metric_system_name => 'hits', delta => 1  }
+        ]
+    }
+  }],
+  oidc => [{
+    issuer => 'https://example.com/auth/realms/apicast',
+    config => { id_token_signing_alg_values_supported => [ 'RS256' ] },
+    keys => { somekid => { pem => $::public_key, alg => 'RS256' } },
+  }]
+});
+--- request: GET /test
+--- error_code: 403
+--- more_headers eval
+use Crypt::JWT qw(encode_jwt);
+my $jwt = encode_jwt(payload => {
+  aud => 'something',
+  azp => 'appid',
+  sub => 'someone',
+  iss => 'unexpected_issuer',
+  exp => time + 3600 }, key => \$::private_key, alg => 'RS256', extra_headers => { kid => 'somekid' });
+"Authorization: Bearer $jwt"
+--- error_log eval
+[ qr/Claim 'iss' \('unexpected_issuer'\) returned failure/ ]

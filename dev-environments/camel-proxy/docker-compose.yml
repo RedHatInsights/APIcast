@@ -1,0 +1,61 @@
+---
+version: '3.8'
+services:
+  gateway:
+    image: ${IMAGE_NAME:-apicast-test}
+    depends_on:
+    - proxy.socat
+    - camel.proxy
+    - tls.camel.proxy
+    - example.com
+    - actual.upstream
+    environment:
+      THREESCALE_CONFIG_FILE: /tmp/config.json
+      THREESCALE_DEPLOYMENT_ENV: staging
+      APICAST_CONFIGURATION_LOADER: lazy
+      APICAST_WORKERS: 1
+      APICAST_LOG_LEVEL: debug
+      APICAST_CONFIGURATION_CACHE: "0"
+    expose:
+      - "8080"
+      - "8090"
+    ports:
+      - "8080:8080"
+      - "8090:8090"
+    volumes:
+      - ./apicast-config.json:/tmp/config.json
+  proxy.socat:
+    image: alpine/socat:1.7.4.4
+    container_name: proxy
+    restart: unless-stopped
+    command: "-d -v -d TCP-LISTEN:8080,reuseaddr,fork TCP:camel.proxy:8080"
+  camel.proxy:
+    image: zregvart/camel-netty-proxy
+    container_name: camel.proxy
+    expose:
+      - "8080:8080"
+  tls.camel.proxy:
+    image: quay.io/zregvart/camel-netty-proxy
+    container_name: tls.camel.proxy
+    entrypoint:
+      - java
+      - -Dcom.sun.net.ssl.checkRevocation=false
+      - -cp
+      - camel-netty-proxy.jar:lib/*
+      - com.github.zregvart.cnp.ProxyApp
+    expose:
+      - "8443:8443"
+    volumes:
+      - ./cert/keystore.jks:/tls/keystore.jks
+  example.com:
+    image: alpine/socat:1.7.4.4
+    container_name: example.com
+    command: "-d -v -d TCP-LISTEN:80,reuseaddr,fork TCP:actual.upstream:80"
+    expose:
+      - "443"
+    restart: unless-stopped
+  actual.upstream:
+    image: kennethreitz/httpbin
+    container_name: actual.upstream
+    expose:
+      - "80"

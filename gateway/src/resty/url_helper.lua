@@ -1,4 +1,5 @@
 local tonumber = tonumber
+local format = string.format
 
 local resty_url = require('resty.url')
 local core_base = require('resty.core.base')
@@ -38,6 +39,30 @@ function _M.parse_url(url)
     uri.path, uri.query = _M.split_path(parsed[6])
 
     return uri
+end
+
+-- absolute_url formats an absolute URI from a table containing the fields: scheme, host, port and path
+-- From https://datatracker.ietf.org/doc/html/rfc7230#section-5.3.2
+-- a client MUST send the target URI in absolute-form as the request-target
+-- An example absolute-form of request-line would be:
+-- GET http://www.example.org/pub/WWW/TheProject.html HTTP/1.1
+-- @param uri the table
+-- @return absolute URI
+function _M.absolute_url(uri)
+    assert(type(uri) == 'table', 'the value of uri is not table')
+    local port = uri.port
+    local default_port = resty_url.default_port(uri.scheme)
+
+    local host = uri.host
+    if port and port ~= default_port then
+        host = format('%s:%s', uri.host, port)
+    end
+
+    return format('%s://%s%s',
+            uri.scheme,
+            host,
+            uri.path or '/'
+    )
 end
 
 return _M

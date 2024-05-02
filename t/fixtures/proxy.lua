@@ -113,6 +113,7 @@ local function forward_http_stream(sock, upstream)
         send(upstream, header_line)
 
         local header = re_match(header_line, [[(?<name>[^:\s]+):\s*(?<value>.+)\r\n$]])
+        ngx.log(ngx.DEBUG, 'proxy http request - got header line: ', header_line)
 
         if header and str_lower(header.name) == 'content-length' then
             body_length = tonumber(header.value)

@@ -110,7 +110,8 @@ __DATA__
           {
             "name": "apicast.policy.3scale_batcher",
             "configuration": {
-              "batch_report_seconds" : 1
+              "batch_report_seconds" : 10,
+              "auths_ttl": 30
             }
           },
           {
@@ -139,6 +140,7 @@ __DATA__
     }
   ]
 }
+--- timeout: 25s
 --- test env
 content_by_lua_block {
   local function request(path)
@@ -163,7 +165,7 @@ content_by_lua_block {
   request('/foo/bar')
 
   request('/foo')
-  ngx.sleep(2)
+  ngx.sleep(15)
 }
 --- response_body
 connected: 1

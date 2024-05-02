@@ -30,7 +30,7 @@ function _M.escape_uri(source_uri)
 
   local dst = ffi.new("unsigned char[?]", source_uri_len + 1 + tonumber(escape_len))
   ngx_escape_uri(dst, source_str, source_uri_len, 0)
-  return ffi_str(dst) 
+  return ffi_str(dst)
 end
 
 return _M

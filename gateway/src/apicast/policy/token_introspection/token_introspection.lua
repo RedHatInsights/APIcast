@@ -94,7 +94,10 @@ function _M:access(context)
 
     local components = resty_url.parse(context.service.oidc.issuer_endpoint)
     self.credential = create_credential(components.user, components.password)
-    self.introspection_url = context.proxy.oauth.config.token_introspection_endpoint
+    local oauth_config = context.proxy.oauth.config
+    -- token_introspection_endpoint being deprecated in RH SSO 7.4 and removed in 7.5
+    -- https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.5/html-single/upgrading_guide/index#non_standard_token_introspection_endpoint_removed
+    self.introspection_url = oauth_config.introspection_endpoint or oauth_config.token_introspection_endpoint
   end
 
   if self.introspection_url then
@@ -102,13 +105,19 @@ function _M:access(context)
     local access_token = authorization.token
     --- Introspection Response must have an "active" boolean value.
     -- https://tools.ietf.org/html/rfc7662#section-2.2
-    if not introspect_token(self, access_token).active == true then
-      ngx.log(ngx.INFO, 'token introspection for access token ', access_token, ': token not active')
-      ngx.status = context.service.auth_failed_status
-      ngx.say(context.service.error_auth_failed)
-      return ngx.exit(ngx.status)
+    if introspect_token(self, access_token).active == true then
+      -- access granted
+      return
     end
+
+    ngx.log(ngx.INFO, 'token introspection for access token ', access_token, ': token not active')
+  else
+    ngx.log(ngx.WARN, 'token instropection cannot be performed as introspection endpoint is not available')
   end
+
+  ngx.status = context.service.auth_failed_status
+  ngx.say(context.service.error_auth_failed)
+  return ngx.exit(ngx.status)
 end
 
 return _M

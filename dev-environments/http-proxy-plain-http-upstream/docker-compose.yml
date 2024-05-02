@@ -1,0 +1,52 @@
+---
+version: '3.8'
+services:
+  gateway:
+    image: ${IMAGE_NAME:-apicast-test}
+    depends_on:
+    - proxy
+    - actual.proxy
+    - example.com
+    - two.upstream
+    environment:
+      THREESCALE_CONFIG_FILE: /tmp/config.json
+      THREESCALE_DEPLOYMENT_ENV: staging
+      APICAST_CONFIGURATION_LOADER: lazy
+      APICAST_WORKERS: 1
+      APICAST_LOG_LEVEL: debug
+      APICAST_CONFIGURATION_CACHE: "0"
+    expose:
+      - "8080"
+      - "8090"
+    ports:
+      - "8080:8080"
+      - "8090:8090"
+    volumes:
+      - ./apicast-config.json:/tmp/config.json
+  proxy:
+    image: alpine/socat:1.7.4.4
+    container_name: proxy
+    command: "-d -v -d TCP-LISTEN:8080,reuseaddr,fork TCP:actual.proxy:443"
+    expose:
+      - "8080"
+    restart: unless-stopped
+  actual.proxy:
+    container_name: actual.proxy
+    build:
+      dockerfile: ./tinyproxy.Dockerfile
+    expose:
+      - "3128:3128"
+      - "443:443"
+    volumes:
+      - ./tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf
+  example.com:
+    image: alpine/socat:1.7.4.4
+    container_name: example.com
+    command: "-d -v -d TCP-LISTEN:80,reuseaddr,fork TCP:two.upstream:80"
+    expose:
+      - "443"
+    restart: unless-stopped
+  two.upstream:
+    image: kennethreitz/httpbin
+    expose:
+      - "80"

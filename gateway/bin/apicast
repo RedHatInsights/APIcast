@@ -14,7 +14,6 @@ sub detect_lua_version {
 
 my $apicast_dir = $ENV{APICAST_DIR} || abs_path(dirname(abs_path(__FILE__)) . '/..');
 
-
 sub detect_apicast_paths {
     my $lua_modules = abs_path(dirname(abs_path(__FILE__)) . '/..');
     my $command = basename(__FILE__);
@@ -68,22 +67,14 @@ if ($rover && !$lua_path) {
     $lua_lib ||= ';';
 }
 
-
-
 $ENV{APICAST_DIR} = $apicast_conf;
 $ENV{LUA_PATH} = sprintf('%1$s/?.lua;', $apicast_src) . $lua_path . "/usr/local/openresty/lualib/?.lua;";
 $ENV{LUA_CPATH} = sprintf('%1$s/?.so;', $apicast_lib) . $lua_lib;
 $ENV{PWD} = $cwd;
 $ENV{ARGV0} = $0;
 
-sub lua_file {
-    my ($lua, $lua_file) = tempfile();
-
-    print { $lua } <DATA>;
-    close DATA;
-    close $lua;
-
-    return $lua_file;
+sub apicast_cli {
+    return abs_path(dirname(abs_path(__FILE__)) . '/apicast_cli.lua');
 }
 
 my @resty_args = ();
@@ -104,70 +95,7 @@ for my $inc ($apicast_src, 'src') {
         push @resty_args, '-I', $inc;
     }
 }
-my @args = ('resty', @resty_args, lua_file(), @ARGV);
+
+my @args = ('resty', @resty_args, apicast_cli(), @ARGV);
 
 exec '/usr/bin/env', @args;
-
-# This Lua helper is going to be executed by resty to detect if lua-rover is available.
-# And if so then run setup and lock down load paths to what is defined in the Roverfile + openresty libraries.
-__DATA__
-#!/usr/bin/env resty
-local ok, setup = pcall(require, 'rover.setup')
-local re = require('ngx.re')
-
--- detect the full path to resty binary this has been started with
-local function resty(code)
-    local cmd
-    do
-        local i = 0
-
-        while not cmd do
-            if not arg[i-1] then cmd = arg[i] end
-            i = i - 1
-        end
-    end
-
-    if not cmd then return nil, 'could not find resty' end
-
-    local handle = io.popen(([[/usr/bin/env -i %q -e %q]]):format(cmd, code))
-    local result = handle:read("*l")
-
-    handle:close()
-
-    return result
-end
-
--- get the default package.path and strip out paths for shared code
-local function default_package_path()
-    local sep = ';'
-    local filtered = {}
-    local LUA_DEFAULT_PATH = resty('print(package.path)')
-    local contains = function(str, pattern) return str:find(pattern, 1, true) end
-    local paths = re.split(LUA_DEFAULT_PATH or '', sep, 'oj')
-
-    for i=1,#paths do
-        local path = paths[i]
-
-        if not contains(path, '/site/') and
-           not contains(path, '/share/') and
-           path:find('^/') then
-            table.insert(filtered, path)
-        end
-    end
-
-    return table.concat(filtered, sep)
-end
-
-if ok then
-    setup()
-    -- Use not only rover paths but also code shipped with OpenResty.
-    -- Rover sets it up to Roverfile defined dependencies only.
-    -- But APIcast needs to access libraries distributed with OpenResty.
-    package.path = package.path ..';' .. default_package_path()
-    -- Load APIcast and dependencies
-    require('apicast.executor')
-else
-    package.path = './src/?.lua;' .. package.path
-end
-
-require('apicast.cli')(arg)

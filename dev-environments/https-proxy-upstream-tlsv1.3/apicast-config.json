@@ -1,0 +1,70 @@
+{
+  "services": [
+    {
+      "id": "1",
+      "backend_version": "1",
+      "proxy": {
+        "hosts": ["get.example.com"],
+        "api_backend": "https://example.com/get",
+        "backend": {
+          "endpoint": "http://127.0.0.1:8081",
+          "host": "backend"
+        },
+        "policy_chain": [
+          {
+            "name": "apicast.policy.http_proxy",
+            "configuration": {
+              "https_proxy": "http://proxy:443/"
+            }
+          },
+          {
+            "name": "apicast.policy.apicast"
+          }
+        ],
+        "proxy_rules": [
+          {
+            "http_method": "GET",
+            "pattern": "/",
+            "metric_system_name": "hits",
+            "delta": 1,
+            "parameters": [],
+            "querystring_parameters": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "2",
+      "backend_version": "1",
+      "proxy": {
+        "hosts": ["post.example.com"],
+        "api_backend": "https://example.com/post",
+        "backend": {
+          "endpoint": "http://127.0.0.1:8081",
+          "host": "backend"
+        },
+        "policy_chain": [
+          {
+            "name": "apicast.policy.http_proxy",
+            "configuration": {
+              "https_proxy": "http://proxy:443/"
+            }
+          },
+          {
+            "name": "apicast.policy.apicast"
+          }
+        ],
+        "proxy_rules": [
+          {
+            "http_method": "POST",
+            "pattern": "/",
+            "metric_system_name": "hits",
+            "delta": 1,
+            "parameters": [],
+            "querystring_parameters": {}
+          }
+        ]
+      }
+    }
+  ]
+}

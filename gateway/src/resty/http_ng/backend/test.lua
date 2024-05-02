@@ -8,8 +8,16 @@ local remove = table.remove
 local error = error
 local format = string.format
 local response = require 'resty.http_ng.response'
+local url_helper = require('resty.url_helper')
 
 local _M = {}
+
+local function parse_url(url)
+    local url_obj = url_helper.parse_url(url)
+    if not url_obj then return end
+    if url_obj.query then url_obj.query = ngx.decode_args(url_obj.query) end
+    return url_obj
+end
 
 local function contains(expected, actual)
   if actual == expected then return true end
@@ -25,7 +33,10 @@ local function contains(expected, actual)
 
   if t1 == 'table' then
     for k,v in pairs(expected) do
-      local ok, err = contains(v, actual[k])
+      -- compare urls with query params no matter param order
+      local expected_val = k == 'url' and parse_url(v) or v
+      local actual_val = k == 'url' and parse_url(actual[k]) or actual[k]
+      local ok, err = contains(expected_val, actual_val)
       if not ok then
         return false, format('[%q] %s', k, err)
       end

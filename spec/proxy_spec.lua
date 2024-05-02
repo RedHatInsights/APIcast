@@ -1,5 +1,6 @@
 local http_ng_response = require('resty.http_ng.response')
 local lrucache = require('resty.lrucache')
+local cjson = require('cjson')
 
 local configuration_store = require 'apicast.configuration_store'
 local Service = require 'apicast.configuration.service'
@@ -52,12 +53,6 @@ describe('Proxy', function()
     local get_upstream
     before_each(function() get_upstream = proxy.get_upstream end)
 
-    it('sets correct upstream port', function()
-      assert.same(443, get_upstream({ api_backend = 'https://example.com' }):port())
-      assert.same(80, get_upstream({ api_backend = 'http://example.com' }):port())
-      assert.same(8080, get_upstream({ api_backend = 'http://example.com:8080' }):port())
-    end)
-
     it("on invalid api_backend return error", function()
       local upstream, err = get_upstream({ api_backend = 'test.com' })
       assert.falsy(upstream)
@@ -66,6 +61,18 @@ describe('Proxy', function()
 
     it("on no api_backend return nil and no error", function()
       local upstream, err = get_upstream({})
+      assert.falsy(upstream)
+      assert.falsy(err)
+    end)
+
+    it("on no api_backend return empty string and no error", function()
+      local upstream, err = get_upstream({api_backend = ''})
+      assert.falsy(upstream)
+      assert.falsy(err)
+    end)
+
+    it("on no api_backend return null and no error", function()
+      local upstream, err = get_upstream({api_backend = cjson.null})
       assert.falsy(upstream)
       assert.falsy(err)
     end)

@@ -3,6 +3,7 @@
 local http = require 'resty.resolver.http'
 local resty_url = require 'resty.url'
 local resty_env = require 'resty.env'
+local url_helper = require('resty.url_helper')
 local format = string.format
 
 local _M = {
@@ -11,105 +12,6 @@ local _M = {
 
 local function default_port(uri)
     return uri.port or resty_url.default_port(uri.scheme)
-end
-
-local function connect_direct(httpc, request)
-    local uri = request.uri
-    local host = uri.host
-    local ip, port = httpc:resolve(host, nil, uri)
-    -- #TODO: This logic may no longer be needed as of PR#1323 and should be reviewed as part of a refactor
-    local options = { pool = format('%s:%s', host, port) }
-    local ok, err = httpc:connect(ip, port or default_port(uri), options)
-
-    if not ok then return nil, err end
-
-    ngx.log(ngx.DEBUG, 'connection to ', host, ':', httpc.port, ' established',
-        ', reused times: ', httpc:get_reused_times())
-
-    if uri.scheme == 'https' then
-        ok, err = httpc:ssl_handshake(nil, host, request.ssl_verify)
-        if not ok then return nil, err end
-    end
-
-    -- use correct host header
-    httpc.host = host
-
-    return httpc
-end
-
-local function _connect_tls_direct(httpc, request, host, port)
-
-    local uri = request.uri
-
-    local ok, err = httpc:ssl_handshake(nil, uri.host, request.ssl_verify)
-    if not ok then return nil, err end
-
-    return httpc
-end
-
-local function _connect_proxy_https(httpc, request, host, port)
-    -- When the connection is reused the tunnel is already established, so
-    -- the second CONNECT request would reach the upstream instead of the proxy.
-    if httpc:get_reused_times() > 0 then
-        return httpc, 'already connected'
-    end
-
-    local uri = request.uri
-
-    local ok, err = httpc:request({
-        method = 'CONNECT',
-        path = format('%s:%s', host, port or default_port(uri)),
-        headers = {
-            ['Host'] = request.headers.host or format('%s:%s', uri.host, default_port(uri)),
-        }
-    })
-    if not ok then return nil, err end
-
-    ok, err = httpc:ssl_handshake(nil, uri.host, request.ssl_verify)
-    if not ok then return nil, err end
-
-    return httpc
-end
-
-local function connect_proxy(httpc, request, skip_https_connect)
-    -- target server requires hostname not IP and DNS resolution is left to the proxy itself as specified in the RFC #7231
-    -- https://httpwg.org/specs/rfc7231.html#CONNECT
-    local uri = request.uri
-    local proxy_uri = request.proxy
-
-    if proxy_uri.scheme ~= 'http' then
-        return nil, 'proxy connection supports only http'
-    else
-        proxy_uri.port = default_port(proxy_uri)
-    end
-
-    if not port then
-        port = default_port(uri)
-    end
-
-    -- TLS tunnel is verified only once, so we need to reuse connections only for the same Host header
-    local options = { pool = format('%s:%s:%s:%s', proxy_uri.host, proxy_uri.port, uri.host, port) }
-    local ok, err = httpc:connect(proxy_uri.host, proxy_uri.port, options)
-    if not ok then return nil, err end
-
-    ngx.log(ngx.DEBUG, 'connection to ', proxy_uri.host, ':', proxy_uri.port, ' established',
-        ', pool: ', options.pool, ' reused times: ', httpc:get_reused_times())
-
-    ngx.log(ngx.DEBUG, 'targeting server ', uri.host, ':', uri.port)
-
-    if uri.scheme == 'http' then
-        -- http proxy needs absolute URL as the request path
-        request.path = format('%s://%s:%s%s', uri.scheme, uri.host, uri.port, uri.path or '/')
-        return httpc
-    elseif uri.scheme == 'https' and skip_https_connect then
-        request.path = format('%s://%s:%s%s', uri.scheme, uri.host, uri.port, request.path or '/')
-        return _connect_tls_direct(httpc, request, uri.host, uri.port)
-    elseif uri.scheme == 'https' then
-        return _connect_proxy_https(httpc, request, uri.host, uri.port)
-
-    else
-        return nil, 'invalid scheme'
-    end
 end
 
 local function parse_request_uri(request)
@@ -127,18 +29,115 @@ local function find_proxy_url(request)
     return request.proxy_uri or _M.find(uri)
 end
 
-local function connect(request, skip_https_connect)
+local function connect(request)
+    request = request or { }
     local httpc = http.new()
-    local proxy_uri = find_proxy_url(request)
 
-    request.ssl_verify = request.options and request.options.ssl and request.options.ssl.verify
-    request.proxy = proxy_uri
-
-    if proxy_uri then
-        return connect_proxy(httpc, request, skip_https_connect)
-    else
-        return connect_direct(httpc, request)
+    if request.upstream_connection_opts then
+      local con_opts = request.upstream_connection_opts
+      ngx.log(ngx.DEBUG, 'setting timeouts (secs), connect_timeout: ', con_opts.connect_timeout,
+        ' send_timeout: ', con_opts.send_timeout, ' read_timeout: ', con_opts.read_timeout)
+      -- lua-resty-http uses nginx API for lua sockets
+      -- in milliseconds
+      -- https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#tcpsocksettimeouts
+      local connect_timeout = con_opts.connect_timeout and con_opts.connect_timeout * 1000
+      local send_timeout = con_opts.send_timeout and con_opts.send_timeout * 1000
+      local read_timeout = con_opts.read_timeout and con_opts.read_timeout * 1000
+      httpc:set_timeouts(connect_timeout, send_timeout, read_timeout)
     end
+
+    local proxy_uri = find_proxy_url(request)
+    local uri = request.uri
+    local scheme = uri.scheme
+    local host = uri.host
+    local port = default_port(uri)
+    local skip_https_connect = request.skip_https_connect
+
+    -- set ssl_verify: lua-resty-http set ssl_verify to true by default if scheme is https, whereas
+    -- openresty treat nil as false, so we need to explicitly set ssl_verify to false if nil
+    local ssl_verify = request.options and request.options.ssl and request.options.ssl.verify or false
+
+    local options = {
+      scheme = scheme,
+      host = host,
+      port = port
+    }
+    if scheme == 'https' then
+        options.ssl_server_name = host
+        options.ssl_verify = ssl_verify
+    end
+
+    -- Connect via proxy
+    if proxy_uri then
+        if proxy_uri.scheme ~= 'http' then
+            return nil, 'proxy connection supports only http'
+        else
+            proxy_uri.port = default_port(proxy_uri)
+        end
+
+        local proxy_url = format("%s://%s:%s", proxy_uri.scheme, proxy_uri.host, proxy_uri.port)
+        local proxy_auth = request.proxy_auth
+
+        if scheme == 'http' then
+            -- Used by http_ng module to send request to 3scale backend through proxy.
+
+            -- http proxy needs absolute URL as the request path, lua-resty-http 1.17.1 will
+            -- construct a path_prefix based on host and port so we only set request path here
+            --
+            -- https://github.com/ledgetech/lua-resty-http/blob/master/lib/resty/http_connect.lua#L99
+            request.path = uri.path or '/'
+            options.proxy_opts = {
+                http_proxy = proxy_url,
+                http_proxy_authorization = proxy_auth
+            }
+        elseif scheme == 'https' and skip_https_connect then
+            options.scheme = proxy_uri.scheme
+            options.host = proxy_uri.host
+            options.port = proxy_uri.port
+            options.pool = format('%s:%s:%s:%s', proxy_uri.host, proxy_uri.port, host, port)
+            local custom_uri = { scheme = uri.scheme, host = uri.host, port = uri.port, path = request.path }
+            request.path = url_helper.absolute_url(custom_uri)
+
+            local ok, err = httpc:connect(options)
+            if not ok then return nil, err end
+
+            ngx.log(ngx.DEBUG, 'connection to ', proxy_uri.host, ':', proxy_uri.port, ' established',
+                ', pool: ', httpc.pool, ' reused times: ', httpc:get_reused_times())
+
+            ngx.log(ngx.DEBUG, 'targeting server ', host, ':', port)
+
+            local ok, err = httpc:ssl_handshake(nil, host, request.ssl_verify)
+            if not ok then return nil, err end
+
+            return httpc
+        elseif scheme == 'https' then
+            options.proxy_opts = {
+                https_proxy = proxy_url,
+                https_proxy_authorization = proxy_auth
+            }
+        else
+            return nil, 'invalid scheme'
+        end
+
+        -- TLS tunnel is verified only once, so we need to reuse connections only for the same Host header
+        local ok, err = httpc:connect(options)
+        if not ok then return nil, err end
+
+        ngx.log(ngx.DEBUG, 'connection to ', proxy_uri.host, ':', proxy_uri.port, ' established',
+            ', pool: ', httpc.pool, ' reused times: ', httpc:get_reused_times())
+        ngx.log(ngx.DEBUG, 'targeting server ', host, ':', port)
+    else
+        -- Connect direct
+        -- Mostly used by http_ng module to connect 3scale backend module.
+        local ok, err = httpc:connect(options)
+        if not ok then return nil, err end
+
+        ngx.log(ngx.DEBUG, 'connection to ', httpc.host, ':', httpc.port, ' established',
+            ', pool: ', httpc.pool, ' reused times: ', httpc:get_reused_times())
+    end
+
+
+    return httpc
 end
 
 function _M.env()

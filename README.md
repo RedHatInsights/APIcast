@@ -66,7 +66,7 @@ oc new-app -f https://raw.githubusercontent.com/3scale/apicast/master/openshift/
 - Rate-limit: can apply limits based on a header, [JWT](https://jwt.io/) claims, the IP of the request and many more.
 - Modular and extensible: thanks to the APIcast [policies framework](doc/policies.md).
 - Monitoring with [Prometheus](https://prometheus.io/).
-- [OpenTracing](https://opentracing.io/) integration with [Jaeger](https://www.jaegertracing.io/).
+- [NGINX instrumentation](https://github.com/open-telemetry/opentelemetry-cpp-contrib) using [OpenTelemetry](https://opentelemetry.io/). Works with [Jaeger](https://www.jaegertracing.io/).
 - Can be deployed in [Openshift](https://www.openshift.com/).
 - Integrates with IDPs like [Keycloak](https://www.keycloak.org) to provide authentication based on [OIDC](https://openid.net/connect/).
 

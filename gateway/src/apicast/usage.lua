@@ -6,7 +6,6 @@ local setmetatable = setmetatable
 local ipairs = ipairs
 local insert = table.insert
 local remove = table.remove
-local encode_args = ngx.encode_args
 local tconcat = table.concat
 local tinsert = table.insert
 local format = string.format

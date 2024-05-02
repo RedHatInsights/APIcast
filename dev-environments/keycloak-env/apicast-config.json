@@ -1,0 +1,123 @@
+{
+  "services": [
+    {
+      "id": 2,
+      "backend_version": "oauth",
+      "account_id": 2,
+      "name": "API",
+      "description": null,
+      "txt_support": null,
+      "created_at": "2024-01-16T13:46:50Z",
+      "updated_at": "2024-01-19T22:13:30Z",
+      "logo_file_name": null,
+      "logo_content_type": null,
+      "logo_file_size": null,
+      "state": "incomplete",
+      "intentions_required": false,
+      "terms": null,
+      "buyers_manage_apps": true,
+      "buyers_manage_keys": true,
+      "custom_keys_enabled": true,
+      "buyer_plan_change_permission": "request",
+      "buyer_can_select_plan": false,
+      "notification_settings": null,
+      "default_application_plan_id": 7,
+      "default_service_plan_id": 5,
+      "tenant_id": 2,
+      "system_name": "api",
+      "mandatory_app_key": true,
+      "buyer_key_regenerate_enabled": true,
+      "referrer_filters_required": false,
+      "deployment_option": "self_managed",
+      "kubernetes_service_link": null,
+      "proxiable?": true,
+      "backend_authentication_type": "service_token",
+      "backend_authentication_value": "my_token",
+      "proxy": {
+        "service_id": 2,
+        "id": 2,
+        "tenant_id": 2,
+        "endpoint": "https://prod.example.com:443",
+        "deployed_at": null,
+        "auth_app_key": "app_key",
+        "auth_app_id": "app_id",
+        "auth_user_key": "user_key",
+        "credentials_location": "query",
+        "error_auth_failed": "Authentication failed",
+        "error_auth_missing": "Authentication parameters missing",
+        "created_at": "2024-01-16T13:46:51Z",
+        "updated_at": "2024-01-19T22:13:30Z",
+        "error_status_auth_failed": 403,
+        "error_headers_auth_failed": "text/plain; charset=us-ascii",
+        "error_status_auth_missing": 403,
+        "error_headers_auth_missing": "text/plain; charset=us-ascii",
+        "error_no_match": "No Mapping Rule matched",
+        "error_status_no_match": 404,
+        "error_headers_no_match": "text/plain; charset=us-ascii",
+        "secret_token": "Shared_secret_sent_from_proxy_to_API_backend_00000000",
+        "hostname_rewrite": "",
+        "oauth_login_url": null,
+        "sandbox_endpoint": "https://stg.example.com:443",
+        "api_test_path": "/",
+        "api_test_success": null,
+        "apicast_configuration_driven": true,
+        "oidc_issuer_endpoint": "http://oidc-issuer-for-3scale:oidc-issuer-for-3scale-secret@keycloak:8080/realms/basic",
+        "lock_version": 4,
+        "authentication_method": "oidc",
+        "oidc_issuer_type": "keycloak",
+        "error_headers_limits_exceeded": "text/plain; charset=us-ascii",
+        "error_status_limits_exceeded": 429,
+        "error_limits_exceeded": "Usage limit exceeded",
+        "staging_domain": "stg.example.com",
+        "production_domain": "prod.example.com",
+        "endpoint_port": 443,
+        "api_backend": "http://example.com/get",
+        "valid?": true,
+        "service_backend_version": "oauth",
+        "hosts": [
+          "prod.example.com",
+          "stg.example.com"
+        ],
+        "backend": {
+          "endpoint": "http://127.0.0.1:8081",
+          "host": "backend"
+        },
+        "policy_chain": [
+          {
+            "name": "token_introspection",
+            "version": "builtin",
+            "configuration": {
+              "auth_type": "use_3scale_oidc_issuer_endpoint"
+            }
+          },
+          {
+            "name": "apicast",
+            "version": "builtin",
+            "configuration": {}
+          }
+        ],
+        "jwt_claim_with_client_id": "azp",
+        "jwt_claim_with_client_id_type": "plain",
+        "proxy_rules": [
+          {
+            "id": 2,
+            "proxy_id": 2,
+            "http_method": "GET",
+            "pattern": "/",
+            "metric_id": 6,
+            "metric_system_name": "hits",
+            "delta": 1,
+            "tenant_id": 2,
+            "redirect_url": null,
+            "position": 1,
+            "last": false,
+            "owner_id": 2,
+            "owner_type": "Proxy",
+            "parameters": [],
+            "querystring_parameters": {}
+          }
+        ]
+      }
+    }
+  ]
+}

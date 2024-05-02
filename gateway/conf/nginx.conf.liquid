@@ -9,6 +9,10 @@ env OPENSSL_VERIFY;
   {% for file in "modules/ngx_http_opentracing_module.so" | filesystem %}
 load_module {{file}};
   {% endfor %}
+{% elsif opentelemetry != empty %}
+  {% for file in "modules/otel_ngx_module.so" | filesystem %}
+load_module {{file}};
+  {% endfor %}
 {% else %}
   {% if timer_resolution %}
     timer_resolution {{ timer_resolution }};
@@ -39,7 +43,7 @@ http {
   tcp_nodelay        on;
   server_tokens off;
 
-
+  variables_hash_max_size 2048;
 
   proxy_cache_path /tmp/cache levels=1:2 keys_zone=apicast_cache:10m;
   # Enabling the Lua code cache is strongly encouraged for production use
@@ -81,18 +85,14 @@ http {
     {% include tracer_conf %}
   {% endif %}
 
+  {% if opentelemetry != empty %}
+    {%- capture otel_conf %}conf.d/opentelemetry/otel.conf.liquid{%- endcapture -%}
+    {% include otel_conf %}
+  {% endif %}
+
   {% for file in template | default: 'http.d/apicast.conf.liquid' | filesystem %}
     {% include file %}
   {% endfor %}
-
-  lua_shared_dict limiter 1m;
-
-  # This shared dictionaries are only used in the 3scale batcher policy.
-  # This is not ideal, but they'll need to be here until we allow policies to
-  # modify this template.
-  lua_shared_dict cached_auths 20m;
-  lua_shared_dict batched_reports 20m;
-  lua_shared_dict batched_reports_locks 1m;
 
   {% for file in "sites.d/*.conf" | filesystem %}
     {% include file %}

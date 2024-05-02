@@ -1,7 +1,6 @@
 local insert = table.insert
 local concat = table.concat
 local assert = assert
-local pairs = pairs
 local rawset = rawset
 local rawget = rawget
 local setmetatable = setmetatable
@@ -78,7 +77,7 @@ end
 
 headers.normalize = function(http_headers)
   http_headers = http_headers or {}
-  
+
   local serialize = function(k,v)
     return headers.normalize_value(v), headers.normalize_key(k)
   end

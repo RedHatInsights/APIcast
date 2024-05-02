@@ -1,0 +1,35 @@
+{
+  "services": [
+    {
+      "id": "1",
+      "backend_version": "2",
+      "proxy": {
+        "hosts": ["gateway.example.com"],
+        "credentials_location": "headers",
+        "api_backend": "https://one.upstream:443",
+        "backend": {
+          "endpoint": "http://127.0.0.1:8081",
+          "host": "backend"
+        },
+        "policy_chain": [
+          {
+            "name": "apicast.policy.grpc"
+          },
+          {
+            "name": "apicast.policy.apicast"
+          }
+        ],
+        "proxy_rules": [
+          {
+            "http_method": "POST",
+            "pattern": "/",
+            "metric_system_name": "hits",
+            "delta": 1,
+            "parameters": [],
+            "querystring_parameters": {}
+          }
+        ]
+      }
+    }
+  ]
+}

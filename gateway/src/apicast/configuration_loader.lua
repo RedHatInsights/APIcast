@@ -20,6 +20,9 @@ local tonumber = tonumber
 
 local lazy_load_timeout = 15
 
+-- Reserved domain only for internal use https://www.iana.org/domains/reserved
+local boot_reserved_domain = "boot.test"
+
 local noop = function(...) return ... end
 
 local _M = {
@@ -126,7 +129,7 @@ end
 
 local boot = {
   rewrite = noop,
-  ttl = function() return tonumber(env.value('APICAST_CONFIGURATION_CACHE'), 10) end
+  ttl = ttl
 }
 
 function boot.init(configuration)
@@ -144,6 +147,15 @@ function boot.init(configuration)
     ngx.log(ngx.EMERG, 'cache is off, cannot store configuration, exiting')
     os.exit(0)
   end
+
+  -- This is a reserved configuration injected at init time on boot mode
+  -- When the worker process is (re-)spawned, it is a configuration item
+  -- that can be checked for expiration. When expired, the worker process
+  -- knows it needs to load fresh config
+  local boot_init = _M.configure(configuration, require('cjson').encode({ services = {
+    { id = -1, proxy = { hosts = { boot_reserved_domain } } }
+  }}))
+  assert(boot_init, 'invalid boot init configuration')
 end
 
 local function refresh_configuration(configuration)
@@ -158,6 +170,11 @@ local function refresh_configuration(configuration)
 end
 
 function boot.init_worker(configuration)
+  if not configuration then
+    ngx.log(ngx.ERR, "configuration not initialized")
+    return
+  end
+
   local interval = boot.ttl() or 0
 
   local function schedule(...)
@@ -187,8 +204,24 @@ function boot.init_worker(configuration)
     schedule(interval, handler, ...)
   end
 
-  if interval > 0 then
+  -- Check whether the reserved boot configuration is fresh or stale.
+  -- If it is stale, refresh configuration
+  -- When a worker process is (re-)spawned,
+  -- it will start working with fresh (according the ttl semantics) configuration
+  local boot_reserved_hosts = configuration:find_by_host(boot_reserved_domain, false)
+  if(#boot_reserved_hosts == 0)
+  then
+    -- the boot configuration has expired, load fresh config
+    ngx.log(ngx.INFO, 'boot time configuration has expired')
+    -- ngx.socket.tcp is not available at the init or init_worker phases,
+    -- it needs to be scheduled (with delay = 0)
+    schedule(0, handler, configuration)
+  elseif(interval > 0)
+  then
+    ngx.log(ngx.DEBUG, 'schedule new configuration loading')
     schedule(interval, handler, configuration)
+  else
+    ngx.log(ngx.DEBUG, 'no scheduling for configuration loading')
   end
 end
 

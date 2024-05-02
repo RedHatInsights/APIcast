@@ -123,7 +123,7 @@ end
 function _M:rewrite(context)
   for _, command in ipairs(self.commands) do
     local should_apply_command = is_match_methods(command.methods)
-    
+
     if should_apply_command then
       local rewritten = apply_rewrite_command(command)
 

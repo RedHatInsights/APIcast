@@ -1,6 +1,5 @@
 local setmetatable = setmetatable
 
-local filesystem = require('apicast.cli.filesystem')
 local pl = require'pl.import_into'()
 local Template = require('apicast.cli.template')
 
@@ -30,7 +29,7 @@ function _M.copy(source, destination, env, force)
 
   local template = Template:new(env, source, true)
 
-  for filename in filesystem(source) do
+  for filename in pl.dir.dirtree(source) do
     local path = template:interpret(pl.path.relpath(filename, source))
 
     local fullpath = pl.path.join(destination, path)

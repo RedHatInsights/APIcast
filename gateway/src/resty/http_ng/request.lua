@@ -1,5 +1,3 @@
-local find = string.find
-local sub = string.sub
 local assert = assert
 local setmetatable = setmetatable
 local resty_url = require 'resty.url'

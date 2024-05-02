@@ -1,5 +1,5 @@
 use lib 't';
-use Test::APIcast 'no_plan';
+use Test::APIcast::Blackbox 'no_plan';
 
 $ENV{APICAST_CUSTOM_CONFIG} = "$Test::Nginx::Util::HtmlDir/custom.lua";
 
@@ -10,9 +10,9 @@ run_tests();
 __DATA__
 
 === TEST 1: loading custom config file works
---- http_config
-  lua_package_path "$TEST_NGINX_LUA_PATH";
---- config
+--- configuration
+{}
+--- upstream
   location /t {
     content_by_lua_block {
       path = package.path
@@ -22,6 +22,10 @@ __DATA__
       ngx.exit(ngx.HTTP_OK)
     }
   }
+--- upstream_name
+ctx
+--- more_headers
+Host: ctx
 --- request
 GET /t
 --- user_files

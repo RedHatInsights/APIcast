@@ -45,22 +45,21 @@ _M.async = function(request)
     end
   end
 
-  local ok, err = httpc:connect(host, port)
+  local verify = request.options and request.options.ssl and request.options.ssl.verify
+  if type(verify) == 'nil' then verify = true end
+
+  local options = {
+    scheme = scheme,
+    host = host,
+    port = port,
+    ssl_server_name = host,
+    ssl_verify = verify
+  }
+
+  local ok, err = httpc:connect(options)
 
   if not ok then
     return response.error(request, err)
-  end
-
-  if scheme == 'https' then
-    local verify = request.options and request.options.ssl and request.options.ssl.verify
-    if type(verify) == 'nil' then verify = true end
-
-    local session
-    session, err = httpc:ssl_handshake(false, host, verify)
-
-    if not session then
-      return response.error(request, err)
-    end
   end
 
   local res

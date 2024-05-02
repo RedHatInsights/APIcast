@@ -1,0 +1,38 @@
+---
+version: '3.8'
+services:
+  gateway:
+    image: ${IMAGE_NAME:-apicast-test}
+    depends_on:
+    - one.upstream
+    - two.upstream
+    environment:
+      APICAST_HTTPS_PORT: 8443
+      APICAST_HTTPS_CERTIFICATE: /var/run/secrets/apicast/example.com.crt
+      APICAST_HTTPS_CERTIFICATE_KEY: /var/run/secrets/apicast/example.com.key
+      THREESCALE_CONFIG_FILE: /tmp/config.json
+      THREESCALE_DEPLOYMENT_ENV: staging
+      APICAST_CONFIGURATION_LOADER: lazy
+      APICAST_WORKERS: 1
+      APICAST_LOG_LEVEL: debug
+      APICAST_CONFIGURATION_CACHE: "0"
+    expose:
+      - "8443"
+      - "8090"
+    ports:
+      - "8443:8443"
+      - "8090:8090"
+    volumes:
+      - ./apicast-config.json:/tmp/config.json
+      - ./cert:/var/run/secrets/apicast
+  one.upstream:
+    image: alpine/socat:1.7.4.4
+    container_name: one.upstream
+    command: "-d -v -d TCP-LISTEN:80,reuseaddr,fork TCP:two.upstream:80"
+    expose:
+      - "80"
+    restart: unless-stopped
+  two.upstream:
+    image: kennethreitz/httpbin
+    expose:
+      - "80"

@@ -146,6 +146,8 @@ function _M:set_timeouts(connect_timeout, send_timeout, read_timeout)
 
   -- If one of the values is nil, the default applies:
   -- https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/balancer.md#set_timeouts
+  ngx.log(ngx.DEBUG, 'setting timeouts (secs), connect_timeout: ', connect_timeout,
+    ' send_timeout: ', send_timeout, ' read_timeout: ', read_timeout)
   return ngx_balancer.set_timeouts(connect_timeout, send_timeout, read_timeout)
 end
 

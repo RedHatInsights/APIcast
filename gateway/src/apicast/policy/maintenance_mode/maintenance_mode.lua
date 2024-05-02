@@ -10,6 +10,8 @@ local new = _M.new
 local default_status_code = 503
 local default_message = "Service Unavailable - Maintenance"
 local default_message_content_type = "text/plain; charset=utf-8"
+local default_template_type = 'plain'
+local default_combine_op = "and"
 
 local Condition = require('apicast.conditions.condition')
 local Operation = require('apicast.conditions.operation')
@@ -49,7 +51,7 @@ function _M:load_condition(config)
   self.condition = Condition.new( operations, config.condition.combine_op or default_combine_op)
 end
 
-function set_maintenance_mode(self)
+local function set_maintenance_mode(self)
   ngx.header['Content-Type'] = self.message_content_type
   ngx.status = self.status_code
   ngx.say(self.message)

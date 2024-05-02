@@ -1,0 +1,7 @@
+exporter = "otlp"
+processor = "simple"
+[exporters.otlp]
+host = "127.0.0.1"
+port = 4317
+[service]
+name = "apicast"

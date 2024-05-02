@@ -86,16 +86,6 @@ function _M:resolve()
     return res
 end
 
---- Return port to use when connecting to upstream.
---- @treturn number port number
-function _M:port()
-    if not self or not self.uri then
-        return nil, 'not initialized'
-    end
-
-    return self.uri.port or resty_url.default_port(self.uri.scheme)
-end
-
 local root_uri = {
     ['/'] = true,
     [''] = true,
@@ -210,6 +200,15 @@ function _M:set_keepalive_key(context)
   end
 end
 
+local function get_upstream_location_name(context)
+    if context.upstream_location_name then
+        return context.upstream_location_name
+    end
+    if context.request_unbuffered then
+        return "@upstream_request_unbuffered"
+    end
+end
+
 --- Execute the upstream.
 --- @tparam table context any table (policy context, ngx.ctx) to store the upstream for later use by balancer
 function _M:call(context)
@@ -232,6 +231,8 @@ function _M:call(context)
           self:set_skip_https_connect_on_proxy();
         end
 
+        self.request_unbuffered = context.request_unbuffered
+        self.upstream_connection_opts = context.upstream_connection_opts
         http_proxy.request(self, proxy_uri)
     else
         local err = self:rewrite_request()
@@ -242,9 +243,9 @@ function _M:call(context)
 
     self:set_keepalive_key(context or {})
     if not self.servers then self:resolve() end
-    if context.upstream_location_name then
-        self.location_name = context.upstream_location_name
-    end
+
+    local upstream_location_name = get_upstream_location_name(context)
+    self:update_location(upstream_location_name)
     context[self.upstream_name] = self
 
     return exec(self)

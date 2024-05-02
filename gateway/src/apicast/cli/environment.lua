@@ -23,6 +23,7 @@ local insert = table.insert
 local concat = table.concat
 local re = require('ngx.re')
 
+
 local function parse_nameservers()
     local resolver = require('resty.resolver')
     local nameservers = {}
@@ -42,24 +43,35 @@ local function parse_nameservers()
     end
 end
 
-local function detect_kubernetes()
-  local secrets = open('/run/secrets/kubernetes.io')
-
-  if secrets then secrets:close() end
-
-  return secrets or resty_env.value('KUBERNETES_PORT')
-end
-
+-- CPU shares in Cgroups v1 or converted from weight in Cgroups v2 in millicores
 local function cpu_shares()
-  if not detect_kubernetes() then return end
-
   local shares
-  local file = open('/sys/fs/cgroup/cpu/cpu.shares')
 
-  if file then
-    shares = file:read('*n')
+  -- This check is from https://github.com/kubernetes/kubernetes/blob/release-1.27/test/e2e/node/pod_resize.go#L305-L314
+  -- alternatively, this method can be used: https://kubernetes.io/docs/concepts/architecture/cgroups/#check-cgroup-version
+  -- (`stat -fc %T /sys/fs/cgroup/` returns `cgroup2fs` or `tmpfs`)
+  if pl_path.exists("/sys/fs/cgroup/cgroup.controllers") then
+    -- Cgroups v2
+    ngx.log(ngx.DEBUG, "detecting cpus in Cgroups v2")
+    -- Using the formula from https://github.com/kubernetes/kubernetes/blob/release-1.27/pkg/kubelet/cm/cgroup_manager_linux.go#L570-L574
+    local file = open('/sys/fs/cgroup/cpu.weight')
 
-    file:close()
+    if file then
+      local weight = file:read('*n')
+      file:close()
+
+      shares = (((weight - 1) * 262142) / 9999) + 2
+    end
+  else
+    -- Cgroups v1
+    ngx.log(ngx.DEBUG, "detecting cpus in Cgroups v1")
+    local file = open('/sys/fs/cgroup/cpu/cpu.shares')
+
+    if file then
+      shares = file:read('*n')
+
+      file:close()
+    end
   end
 
   return shares
@@ -67,11 +79,16 @@ end
 
 local function cpus()
     local shares = cpu_shares()
-    if shares then return ceil(shares / 1024) end
+    if shares then
+      local res = ceil(shares / 1024)
+      ngx.log(ngx.DEBUG, "cpu_shares = "..res)
+      return res
+    end
 
     -- TODO: support /sys/fs/cgroup/cpuset/cpuset.cpus
     -- see https://github.com/sclorg/rhscl-dockerfiles/blob/ff912d8764af9a41096e63064bbc325395afa608/rhel7.sti-base/bin/cgroup-limits#L55-L75
     local nproc = util.system('nproc')
+    ngx.log(ngx.DEBUG, "cpus from nproc = "..nproc)
     return tonumber(nproc)
 end
 
@@ -81,6 +98,16 @@ local env_value_mt = {
 
 local function env_value_ref(name)
     return setmetatable({ name = name }, env_value_mt)
+end
+
+local function read_opentracing_tracer(varname)
+    local opentracing_tracer = env_value_ref(varname)
+
+    if tostring(opentracing_tracer) ~= nil then
+        ngx.log(ngx.WARN, 'opentracing use is DEPRECATED. Use Opentelemetry instead with OPENTELEMETRY env var')
+    end
+
+    return opentracing_tracer
 end
 
 local _M = {}
@@ -98,6 +125,8 @@ _M.default_environment = 'production'
 -- @tfield ?string opentracing_tracer loads an opentracing tracer library, for example: jaeger
 -- @tfield ?string opentracing_config opentracing config file to load
 -- @tfield ?string opentracing_forward_header opentracing http header to forward upstream
+-- @tfield ?string opentelemetry enables server instrumentation using opentelemetry SDKs
+-- @tfield ?string opentelemetry_config_file opentelemetry config file to load
 -- @tfield ?string upstream_retry_cases error cases where the call to the upstream should be retried
 --         follows the same format as https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_next_upstream
 -- @tfield ?policy_chain policy_chain @{policy_chain} instance
@@ -113,9 +142,11 @@ _M.default_config = {
     proxy_ssl_session_reuse = env_value_ref('APICAST_PROXY_HTTPS_SESSION_REUSE'),
     proxy_ssl_password_file = env_value_ref('APICAST_PROXY_HTTPS_PASSWORD_FILE'),
     proxy_ssl_verify = resty_env.enabled('OPENSSL_VERIFY'),
-    opentracing_tracer = env_value_ref('OPENTRACING_TRACER'),
+    opentracing_tracer = read_opentracing_tracer('OPENTRACING_TRACER'),
     opentracing_config = env_value_ref('OPENTRACING_CONFIG'),
     opentracing_forward_header = env_value_ref('OPENTRACING_FORWARD_HEADER'),
+    opentelemetry = env_value_ref('OPENTELEMETRY'),
+    opentelemetry_config_file = env_value_ref('OPENTELEMETRY_CONFIG'),
     upstream_retry_cases = env_value_ref('APICAST_UPSTREAM_RETRY_CASES'),
     http_keepalive_timeout = env_value_ref('HTTP_KEEPALIVE_TIMEOUT'),
     policy_chain = require('apicast.policy_chain').default(),

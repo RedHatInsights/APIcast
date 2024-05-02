@@ -31,7 +31,7 @@ function _M.live()
 end
 
 local function context_configuration()
-    return executor:context().configuration or policy_loader:pcall("load_configuration", version or 'builtin')
+    return executor:context().configuration or policy_loader:pcall("load_configuration", 'builtin')
 end
 
 function _M.status(config)

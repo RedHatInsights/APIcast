@@ -8,8 +8,8 @@ Note that when deploying APIcast v2 with OpenShift, some of these parameters can
 
 ### `APICAST_BACKEND_CACHE_HANDLER`
 
-**Values:** strict | resilient  
-**Default:** strict  
+**Values:** strict | resilient
+**Default:** strict
 **Deprecated:** Use [Caching](../gateway/src/apicast/policy/caching/apicast-policy.json) policy instead.
 
 Defines how the authorization cache behaves when backend is unavailable.
@@ -18,7 +18,7 @@ Resilient will do so only on getting authorization denied from backend.
 
 ### `APICAST_CONFIGURATION_CACHE`
 
-**Values:** _a number_  
+**Values:** _a number_
 **Default:** 0
 
 Specifies the period (in seconds) that the configuration will be stored in the cache for. Can take the following values:
@@ -39,12 +39,13 @@ initialize all the entries.
 
 ### `APICAST_CONFIGURATION_LOADER`
 
-**Values:** boot | lazy  
+**Values:** boot | lazy
 **Default:** lazy
 
 Defines how to load the configuration.
 In `boot` mode APIcast will request the configuration to the API manager when the gateway starts.
 In `lazy` mode APIcast will load the configuration on demand for each incoming request (to guarantee a complete refresh on each request `APICAST_CONFIGURATION_CACHE` should be set to `0`).
+
 
 ### `APICAST_CUSTOM_CONFIG`
 
@@ -54,46 +55,23 @@ Defines the name of the Lua module that implements custom logic overriding the e
 
 ### `APICAST_ENVIRONMENT`
 
-**Default:**  
-**Value:** string\[:<string>\]  
+**Default:**
+**Value:** string\[:<string>\]
 **Example:** production:cloud-hosted
 
 Double colon (`:`) separated list of environments (or paths) APIcast should load.
 It can be used instead of `-e` or `---environment` parameter on the CLI and for example
 stored in the container image as default environment. Any value passed on the CLI overrides this variable.
 
-### `APICAST_LOAD_SERVICES_WHEN_NEEDED`
-**Values:**
-- `true` or `1` for _true_
-- `false`, `0` or empty for _false_
-
-**Default:** _false_
-
-This option can be used when there are many services configured. However, its
-performance depends on additional factors such as the number of services, the
-latency between APIcast and the 3scale Admin Portal, the Time To Live (TTL) of
-the configuration, etc.
-
-By default, APIcast loads all the services each time it downloads its
-configuration from the Admin Portal. With a large number of services, this could
-become problematic. When this option is enabled, the configurations are loaded
-lazily. APIcast will only load the ones configured for the host specified in the
-host header of the request.
-
-Notes:
-- The caching defined by `APICAST_CONFIGURATION_CACHE` applies.
-- This option will be disabled when `APICAST_CONFIGURATION_LOADER` is `boot`.
-- Not compatible with `APICAST_PATH_ROUTING`.
-
 ### `APICAST_LOG_FILE`
 
 **Default:** _stderr_
 
-Defines the file that will store the OpenResty error log. It is used by `bin/apicast` in the `error_log` directive. Refer to [NGINX documentation](http://nginx.org/en/docs/ngx_core_module.html#error_log) for more information. The file path can be either absolute, or relative to the prefix directory (`apicast` by default) 
+Defines the file that will store the OpenResty error log. It is used by `bin/apicast` in the `error_log` directive. Refer to [NGINX documentation](http://nginx.org/en/docs/ngx_core_module.html#error_log) for more information. The file path can be either absolute, or relative to the prefix directory (`apicast` by default)
 
 ### `APICAST_LOG_LEVEL`
 
-**Values:** debug | info | notice | warn | error | crit | alert | emerg  
+**Values:** debug | info | notice | warn | error | crit | alert | emerg
 **Default:** warn
 
 Specifies the log level for the OpenResty logs.
@@ -116,7 +94,7 @@ that improve the performance of the whole gateway.
 
 ### `APICAST_OIDC_LOG_LEVEL`
 
-**Values:** debug | info | notice | warn | error | crit | alert | emerg  
+**Values:** debug | info | notice | warn | error | crit | alert | emerg
 **Default:** err
 
 Allows to set the log level for the logs related to OpenID Connect integration
@@ -136,7 +114,7 @@ You should enable the debug level only for debugging.
 
 ### `APICAST_OAUTH_TOKENS_TTL`
 
-**Values:** _a number_  
+**Values:** _a number_
 **Default:** 604800
 
 When configured to authenticate using OAuth, this param specifies the TTL (in seconds) of the tokens created.
@@ -161,8 +139,8 @@ This parameter has precedence over `APICAST_PATH_ROUTING`. If `APICAST_PATH_ROUT
 
 ### `APICAST_POLICY_LOAD_PATH`
 
-**Default**: `APICAST_DIR/policies`  
-**Value:**: string\[:<string>\]  
+**Default**: `APICAST_DIR/policies`
+**Value:**: string\[:<string>\]
 **Example**: `~/apicast/policies:$PWD/policies`
 
 Double colon (`:`) separated list of paths where APIcast should look for policies.
@@ -170,8 +148,8 @@ It can be used to first load policies from a development directory or to load ex
 
 ### `APICAST_PROXY_HTTPS_CERTIFICATE_KEY`
 
-**Default:**  
-**Value:** string  
+**Default:**
+**Value:** string
 **Example:** /home/apicast/my_certificate.key
 
 The path to the key of the client SSL certificate.
@@ -180,8 +158,8 @@ This parameter can be overridden by the Upstream_TLS policy.
 
 ### `APICAST_PROXY_HTTPS_CERTIFICATE`
 
-**Default:**  
-**Value:** string  
+**Default:**
+**Value:** string
 **Example:** /home/apicast/my_certificate.crt
 
 The path to the client SSL certificate that APIcast will use when connecting
@@ -192,8 +170,8 @@ This parameter can be overridden by the Upstream_TLS policy.
 
 ### `APICAST_PROXY_HTTPS_PASSWORD_FILE`
 
-**Default:**  
-**Value:** string  
+**Default:**
+**Value:** string
 **Example:** /home/apicast/passwords.txt
 
 Path to a file with passphrases for the SSL cert keys specified with
@@ -201,15 +179,15 @@ Path to a file with passphrases for the SSL cert keys specified with
 
 ### `APICAST_PROXY_HTTPS_SESSION_REUSE`
 
-**Default:** on  
+**Default:** on
 **Values:**
 - `on`: reuses SSL sessions.
 - `off`: does not reuse SSL sessions.
 
 ### `APICAST_REPORTING_THREADS`
 
-**Default**: 0  
-**Value:** integer >= 0  
+**Default**: 0
+**Value:** integer >= 0
 **Experimental:** Under extreme load might have unpredictable performance and lose reports.
 
 Value greater than 0 is going to enable out-of-band reporting to backend.
@@ -236,7 +214,7 @@ Find more information about the Response Codes feature on the [3scale support si
 Used to filter the service configured in the 3scale API Manager, the filter
 matches with the public base URL (Staging or production). Services that do not
 match the filter will be discarded. If the regular expression cannot be compiled
-no services will be loaded. 
+no services will be loaded.
 
 Note: If a service does not match, but is included in the
 `APICAST_SERVICES_LIST`, service will not be discarded
@@ -264,6 +242,8 @@ Replace `${ID}` with the actual Service ID. The value should be the configuratio
 
 Setting it to a particular version will prevent it from auto-updating and will always use that version.
 
+**Note**: This env var cannot be used with `THREESCALE_PORTAL_ENDPOINT` pointing to custom path (i.e. master path).
+
 ### `APICAST_UPSTREAM_RETRY_CASES`
 
 **Default**:
@@ -274,15 +254,15 @@ This accepts the same values as https://nginx.org/en/docs/http/ngx_http_proxy_mo
 
 ### `APICAST_WORKERS`
 
-**Default:** auto  
+**Default:** auto
 **Values:** _number_ | auto
 
 This is the value that will be used in the nginx `worker_processes` [directive](http://nginx.org/en/docs/ngx_core_module.html#worker_processes). By default, APIcast uses `auto`, except for the development environment where `1` is used.
 
 ### `BACKEND_ENDPOINT_OVERRIDE`
 
-URI that overrides the backend endpoint. By default, it is the external route. 
-This parameter is useful when deploying APIcast into the same OpenShift cluster than 3scale, as when using the internal hostname of the backend listener service instead of the public route. 
+URI that overrides the backend endpoint. By default, it is the external route.
+This parameter is useful when deploying APIcast into the same OpenShift cluster than 3scale, as when using the internal hostname of the backend listener service instead of the public route.
 
 **Example**: `http://backend-listener.<3scale-namespace>.svc.cluster.local:3000`
 
@@ -332,7 +312,7 @@ It is **required** to provide either `THREESCALE_PORTAL_ENDPOINT` or `THREESCALE
 
 ### `THREESCALE_DEPLOYMENT_ENV`
 
-**Values:** staging | production  
+**Values:** staging | production
 **Default:** production
 
 The value of this environment variable will be used to define the environment for which the configuration will be downloaded from 3scale (Staging or Production), when using new APIcast.
@@ -343,6 +323,22 @@ The value will also be used in the header `X-3scale-User-Agent` in the authorize
 
 URI that includes your password and portal endpoint in the following format: `<schema>://<password>@<admin-portal-domain>`. The `<password>` can be either the provider key or an access token for the 3scale Account Management API. `<admin-portal-domain>` is the URL used to log into the admin portal.
 
+The path appended to `THREESCALE_PORTAL_ENDPOINT` is:
+
+|                      | `APICAST_CONFIGURATION_LOADER`=boot                            | `APICAST_CONFIGURATION_LOADER`=lazy                                     |
+|----------------------|----------------------------------------------------------------|-------------------------------------------------------------------------|
+| endpoint has no path | `/admin/api/account/proxy_configs/${env}.json?version=version&page=X&per_page=500` | `/admin/api/account/proxy_configs/${env}.json?host=host&version=version&page=X&per_page=500` |
+| endpoint has a path  | `/${env}.json`                                                 | `/${env}.json?host=host`                                                 |
+
+The exception to the logic in table above would be when the env var `APICAST_SERVICE_%s_CONFIGURATION_VERSION` is provided.
+In that case, the gateway would load service's proxy configuration one by one:
+* 1 request to `/admin/api/services.json?page=X&per_page=500` (which is paginated and the gateway will iterate over the pages)
+* N requests to `/admin/api/services/${SERVICE_ID}/proxy/configs/${ENVIRONMENT}/{VERSION}.json`.
+
+Note that when the `THREESCALE_PORTAL_ENDPOINT` has no path, the gateway will iterate over the pages of `/admin/api/account/proxy_configs/${env}.json` sending `pages` and `per_page` query parameters.
+
+**Note**: Pages in 3scale API services and proxy config endpoints were implemented on 3scale 2.10 [THREESCALE-4528](https://issues.redhat.com/browse/THREESCALE-4528). Older releases should not be used.
+
 **Example:** `https://access-token@account-admin.3scale.net`.
 
 When `THREESCALE_PORTAL_ENDPOINT` environment variable is provided, the gateway will download the configuration from 3scale on initializing. The configuration includes all the settings provided on the Integration page of the API(s).
@@ -352,6 +348,7 @@ It is **required** to provide either `THREESCALE_PORTAL_ENDPOINT` or `THREESCALE
 
 ### `OPENTRACING_TRACER`
 
+**Deprecated:** Check out [OPENTELEMETRY](#opentelemetry) configuration instead.
 **Example:** `jaeger`
 
 This environment variable controls which tracing library will be loaded, right now, there's only one opentracing tracer available, `jaeger`.
@@ -360,6 +357,8 @@ If empty, opentracing support will be disabled.
 
 
 ### `OPENTRACING_CONFIG`
+
+**Deprecated:** Check out [OPENTELEMETRY](#opentelemetry) configuration instead.
 
 This environment variable is used to determine the config file for the opentracing tracer, if `OPENTRACING_TRACER` is not set, this variable will be ignored.
 
@@ -372,10 +371,10 @@ You can choose to mount a different configuration than the provided by default b
 
 ### `OPENTRACING_FORWARD_HEADER`
 
+**Deprecated:** Check out [OPENTELEMETRY](#opentelemetry) configuration instead.
 **Default:** `uber-trace-id`
 
 This environment variable controls the HTTP header used for forwarding opentracing information, this HTTP header will be forwarded to upstream servers.
-
 
 ### `APICAST_HTTPS_PORT`
 
@@ -406,7 +405,7 @@ If this parameter has `1` as its value, it is possible to include an additional 
 ### `all_proxy`, `ALL_PROXY`
 
 **Default:** no value
-**Value:** string  
+**Value:** string
 **Example:** `http://forward-proxy:80`
 
 Defines a HTTP proxy to be used for connecting to services if a protocol-specific proxy is not specified. Authentication is not supported.
@@ -414,7 +413,7 @@ Defines a HTTP proxy to be used for connecting to services if a protocol-specifi
 ### `http_proxy`, `HTTP_PROXY`
 
 **Default:** no value
-**Value:** string  
+**Value:** string
 **Example:** `http://forward-proxy:80`
 
 Defines a HTTP proxy to be used for connecting to HTTP services. Authentication is not supported.
@@ -422,7 +421,7 @@ Defines a HTTP proxy to be used for connecting to HTTP services. Authentication 
 ### `https_proxy`, `HTTPS_PROXY`
 
 **Default:** no value
-**Value:** string  
+**Value:** string
 **Example:** `http://forward-proxy:80`
 
 Defines a HTTP proxy to be used for connecting to HTTPS services. Authentication is not supported.
@@ -430,7 +429,7 @@ Defines a HTTP proxy to be used for connecting to HTTPS services. Authentication
 ### `no_proxy`, `NO_PROXY`
 
 **Default:** no value
-**Values:** string\[,<string>\]; `*`  
+**Values:** string\[,<string>\]; `*`
 **Example:** `foo,bar.com,.extra.dot.com`
 
 Defines a comma-separated list of hostnames and domain names for which the requests should not be proxied. Setting to a single `*` character, which matches all hosts, effectively disables the proxy.
@@ -438,7 +437,7 @@ Defines a comma-separated list of hostnames and domain names for which the reque
 ### `APICAST_HTTP_PROXY_PROTOCOL`
 
 **Default:** false
-**Values:** boolean  
+**Values:** boolean
 **Example:** "true"
 
 This parameter enables the Proxy Protocol for the HTTP listener.
@@ -446,7 +445,7 @@ This parameter enables the Proxy Protocol for the HTTP listener.
 ### `APICAST_HTTPS_PROXY_PROTOCOL`
 
 **Default:** false
-**Values:** boolean  
+**Values:** boolean
 **Example:** "true"
 
 This parameter enables the Proxy Protocol for the HTTPS listener.
@@ -507,3 +506,69 @@ directive](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_
 
 This parameter is only used by the services that are using content caching
 policy.
+
+### `APICAST_LARGE_CLIENT_HEADER_BUFFERS`
+
+**Default:** 4 8k
+**Value:** string
+
+Sets the maximum number and size of buffers used for reading large client request header.
+
+The format for this value is defined by the [`large_client_header_buffers` NGINX
+directive](https://nginx.org/en/docs/http/ngx_http_core_module.html#large_client_header_buffers)
+
+### `APICAST_POLICY_BATCHER_SHARED_MEMORY_SIZE`
+
+**Default:** 20m
+**Value:** string
+
+Sets the maximum size of shared memory used by batcher policy. The accepted [size units](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#lua_shared_dict) are k and m.
+
+### `OPENTELEMETRY`
+
+This environment variable enables NGINX instrumentation using OpenTelemetry tracing library.
+It works with [Jaeger](https://www.jaegertracing.io/) since version 1.35.
+If the existing collector does not support OpenTelemetry traces, an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) is required as tracing proxy.
+
+If empty or not set, Nginx instrumentation with OpenTelemetry is disabled.
+
+Currently, the only implemeneted [exporter](https://opentelemetry.io/docs/reference/specification/protocol/exporter/)
+in APIcast is OTLP over gRPC `OTLP/gRPC`. Even though OpenTelemetry specification supports also OTLP over HTTP (`OTLP/HTTP`),
+this exporter is not included in APIcast.
+
+Supported propagation types: [W3C](https://w3c.github.io/trace-context/)
+
+### `OPENTELEMETRY_CONFIG`
+
+**Example:** `/tmp/otel.toml`
+
+This environment variable provides location of the configuration file for the tracer. If `OPENTELEMETRY` is not set, this variable will be ignored.
+
+The configuration file specification is defined in the [Nginx instrumentation library repo](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/nginx).
+
+`otlp` is the only supported exporter.
+
+Configuration example
+
+```toml
+exporter = "otlp"
+processor = "batch"
+
+[exporters.otlp]
+# Alternatively, the OTEL_EXPORTER_OTLP_ENDPOINT environment variable can also be used.
+host = "localhost"
+port = 4317
+
+[processors.batch]
+max_queue_size = 2048
+schedule_delay_millis = 5000
+max_export_batch_size = 512
+
+[service]
+name = "apicast" # Opentelemetry resource name
+
+[sampler]
+name = "AlwaysOn" # Also: AlwaysOff, TraceIdRatioBased
+ratio = 0.1
+parent_based = false
+```

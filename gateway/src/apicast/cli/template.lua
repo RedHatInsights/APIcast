@@ -1,3 +1,8 @@
+--- These lines to avoid _G write guard issues, external depencies
+--  See https://github.com/openresty/lua-nginx-module/issues/1558 for more info
+rawset(_G, 'lfs', false)
+rawset(_G, 'warn', false)
+
 local _M = {}
 
 local setmetatable = setmetatable
@@ -8,7 +13,6 @@ local ipairs = ipairs
 local sub = string.sub
 local len = string.len
 local pack = table.pack
-local fs = require('apicast.cli.filesystem')
 local pl = { dir = require('pl.dir'), path = require('pl.path'), file = require('pl.file') }
 local Liquid = require 'liquid'
 local resty_env = require('resty.env')
@@ -84,7 +88,7 @@ local function dirtree(dir, cache)
     return pairs(cached)
   else
     cache[dir] = {}
-    return fs(dir)
+    return pl.dir.dirtree(dir)
   end
 end
 

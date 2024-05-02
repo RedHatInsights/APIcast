@@ -52,21 +52,6 @@ describe('Upstream', function()
         end)
     end)
 
-    describe(':port', function()
-        it('returns port from the URI', function()
-            assert.same(8090, Upstream.new('http://host:8090'):port())
-        end)
-
-        it('returns default port for the scheme when none is provided', function()
-            assert.same(443, Upstream.new('https://example.com'):port())
-        end)
-
-        it('returns nil when port is unknown', function()
-            assert.is_nil(Upstream.new('ftp://example.com'):port())
-        end)
-    end)
-
-
     describe(':append_path', function()
         it('return valid path when is not set', function()
             local up = Upstream.new('http://host:8090')
@@ -215,6 +200,22 @@ describe('Upstream', function()
             upstream:call({})
 
             assert.spy(ngx.exec).was_called_with(upstream.location_name)
+        end)
+
+        it('executes the upstream location when request_unbuffered provided in the context', function()
+            local contexts = {
+                ["buffered_request"] = {ctx={}, upstream_location="@upstream"},
+                ["unbuffered_request"] = {ctx={request_unbuffered=true}, upstream_location="@upstream_request_unbuffered"},
+                ["upstream_location and buffered_request"] = {ctx={upstream_location_name="@grpc", request_unbuffered=true}, upstream_location="@grpc"},
+                ["upstream_location and unbuffered_request"] = {ctx={upstream_location_name="@grpc"}, upstream_location="@grpc"},
+            }
+
+            for _, value in pairs(contexts) do
+                local upstream = Upstream.new('http://localhost')
+                upstream:call(value.ctx)
+
+                assert.spy(ngx.exec).was_called_with(value.upstream_location)
+            end
         end)
 
         it('skips executing the upstream location when missing', function()

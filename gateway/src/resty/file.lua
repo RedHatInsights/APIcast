@@ -1,4 +1,5 @@
 local co_yield = coroutine._yield
+local co_wrap = coroutine._wrap
 local open = io.open
 
 local co_wrap_iter = require("resty.coroutines").co_wrap_iter
@@ -25,6 +26,24 @@ function _M.file_reader(filename)
           co_yield(chunk)
       end
       handle:close()
+    end)
+end
+
+function _M.file_size(filename)
+    return co_wrap(function()
+        local handle, err = open(filename)
+
+        if err then
+          return nil, err
+        end
+
+        local current = handle:seek()
+        local size = handle:seek("end")
+
+        handle:seek("set", current)
+        handle:close()
+
+        return size
     end)
 end
 

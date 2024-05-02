@@ -9,6 +9,9 @@ stds.ngx = {
 }
 
 std = 'ngx_lua+lua52+ngx' -- lua52 has table.pack
+redefined       = false
+unused_args     = false
+max_line_length = false
 
 busted = {std = "+busted", globals = { 'fixture' } }
 files["**/spec/**/*_spec.lua"] = busted

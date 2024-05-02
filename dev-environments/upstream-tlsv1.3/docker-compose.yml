@@ -1,0 +1,36 @@
+---
+version: '3.8'
+services:
+  gateway:
+    image: ${IMAGE_NAME:-apicast-test}
+    depends_on:
+    - example.com
+    - two.upstream
+    environment:
+      THREESCALE_CONFIG_FILE: /tmp/config.json
+      THREESCALE_DEPLOYMENT_ENV: staging
+      APICAST_CONFIGURATION_LOADER: lazy
+      APICAST_WORKERS: 1
+      APICAST_LOG_LEVEL: debug
+      APICAST_CONFIGURATION_CACHE: "0"
+    expose:
+      - "8080"
+      - "8090"
+    ports:
+      - "8080:8080"
+      - "8090:8090"
+    volumes:
+      - ./apicast-config.json:/tmp/config.json
+  example.com:
+    image: alpine/socat:1.7.4.4
+    container_name: example.com
+    command: "-v openssl-listen:443,reuseaddr,fork,cert=/etc/pki/example.com.pem,verify=0,openssl-min-proto-version=TLS1.3,openssl-max-proto-version=TLS1.3 TCP:two.upstream:80"
+    expose:
+      - "443"
+    restart: unless-stopped
+    volumes:
+      - ./cert/example.com.pem:/etc/pki/example.com.pem
+  two.upstream:
+    image: kennethreitz/httpbin
+    expose:
+      - "80"

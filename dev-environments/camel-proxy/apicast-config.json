@@ -1,0 +1,70 @@
+{
+  "services": [
+    {
+      "id": "1",
+      "backend_version": "1",
+      "proxy": {
+        "hosts": ["http-proxy.example.com"],
+        "api_backend": "http://example.com:80/get",
+        "backend": {
+          "endpoint": "http://127.0.0.1:8081",
+          "host": "backend"
+        },
+        "policy_chain": [
+          {
+            "name": "apicast.policy.camel",
+            "configuration": {
+              "http_proxy": "http://proxy.socat:8080/"
+            }
+          },
+          {
+            "name": "apicast.policy.apicast"
+          }
+        ],
+        "proxy_rules": [
+          {
+            "http_method": "GET",
+            "pattern": "/",
+            "metric_system_name": "hits",
+            "delta": 1,
+            "parameters": [],
+            "querystring_parameters": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "2",
+      "backend_version": "1",
+      "proxy": {
+        "hosts": ["https-proxy.example.com"],
+        "api_backend": "https://echo-api.3scale.net:443",
+        "backend": {
+          "endpoint": "http://127.0.0.1:8081",
+          "host": "backend"
+        },
+        "policy_chain": [
+          {
+            "name": "apicast.policy.camel",
+            "configuration": {
+              "https_proxy": "http://tls.camel.proxy:8443/"
+            }
+          },
+          {
+            "name": "apicast.policy.apicast"
+          }
+        ],
+        "proxy_rules": [
+          {
+            "http_method": "GET",
+            "pattern": "/",
+            "metric_system_name": "hits",
+            "delta": 1,
+            "parameters": [],
+            "querystring_parameters": {}
+          }
+        ]
+      }
+    }
+  ]
+}

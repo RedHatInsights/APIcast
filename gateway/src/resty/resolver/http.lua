@@ -1,6 +1,8 @@
 local resty_http = require 'resty.http'
 local resty_resolver = require 'resty.resolver'
 local round_robin = require 'resty.balancer.round_robin'
+local url_helper = require('resty.url_helper')
+local format = string.format
 
 local setmetatable = setmetatable
 
@@ -38,13 +40,44 @@ function _M:resolve(host, port, options)
   return ip, port
 end
 
-function _M.connect(self, host, port, ...)
-  local ip, real_port = self:resolve(host, port)
-  local ok, err = resty_http.connect(self, ip, real_port, ...)
+function _M.connect(self, options, ...)
+  -- cache the host because we need to resolve host to IP
+  local host = options.host
+  local proxy_opts = options.proxy_opts
+  local proxy = proxy_opts and (proxy_opts.http_proxy or proxy_opts.https_proxy)
+  local ip, real_port
+
+  -- target server requires hostname not IP and DNS resolution is left to the proxy itself as specified in the RFC #7231
+  -- https://httpwg.org/specs/rfc7231.html#CONNECT
+  --
+  -- Therefore, only resolve host IP when not using with proxy
+  if not proxy then
+    ip, real_port = self:resolve(options.host, options.port)
+    options.host = ip
+    options.port = real_port
+  else
+    local proxy_uri, err = url_helper.parse_url(proxy)
+    if not proxy_uri then
+      return nil, 'invalid proxy: ' .. err
+    end
+
+    -- Resolve the proxy IP/Port
+    local proxy_host, proxy_port = self:resolve(proxy_uri.host, proxy_uri.port)
+    local proxy_url = format("%s://%s:%s", proxy_uri.scheme, proxy_host, proxy_port)
+
+    if proxy_opts.http_proxy then
+      options.proxy_opts.http_proxy =  proxy_url
+    elseif proxy_opts.https_proxy then
+      options.proxy_opts.https_proxy =  proxy_url
+    end
+  end
+
+  local ok, err = resty_http.connect(self, options, ...)
 
   if ok then
+    -- use correct host header
     self.host = host
-    self.port = real_port
+    self.port = options.port
   end
 
   ngx.log(ngx.DEBUG, 'connected to  ip:', ip, ' host: ', host, ' port: ', real_port, ' ok: ', ok, ' err: ', err)

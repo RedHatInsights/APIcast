@@ -105,8 +105,6 @@ local function read_ca_certificates(ca_certificates)
   if valid then
     return store.store
   end
-
-  store = nil
 end
 
 function _M.new(config)

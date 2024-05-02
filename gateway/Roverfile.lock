@@ -9,7 +9,7 @@ ldoc 1.4.6-2||development
 liquid 0.2.0-2||production
 lua-resty-env 0.4.0-1||production
 lua-resty-execvp 0.1.1-1||production
-lua-resty-http 0.15-0||production
+lua-resty-http 0.17.1-0||production
 lua-resty-iputils 0.3.0-2||production
 lua-resty-jit-uuid 0.0.7-2||production
 lua-resty-jwt 0.2.0-0||production

@@ -47,16 +47,37 @@ describe('resty.http.proxy', function()
     end)
 
     context('.new', function()
-        it('connects to the #http_proxy', function()
-            _M:reset({ http_proxy = 'http://127.0.0.1:1984' })
+      before_each(function()
+        _M:reset({ http_proxy = 'http://127.0.0.1:1984' })
+      end)
 
-            local request = { url = 'http://upstream:8091/request', method = 'GET' }
-            local proxy = assert(_M.new(request))
+      it('connects to the #http_proxy', function()
+          local request = { url = 'http://upstream:8091/request', method = 'GET' }
+          local proxy = assert(_M.new(request))
 
-            local res = assert(proxy:request(request))
+          local res = assert(proxy:request(request))
 
-            assert.same(200, res.status)
-            assert.match('GET http://upstream:8091/request HTTP/1.1', res:read_body())
-        end)
+          assert.same(200, res.status)
+          assert.match('GET http://upstream:8091/request HTTP/1.1', res:read_body())
+      end)
+
+      it('connects to the #http_proxy with timeouts', function()
+          local request = {
+            url = 'http://upstream:8091/request',
+            method = 'GET',
+            upstream_connection_opts = {
+              connect_timeout = 1,
+              send_timeout = 1,
+              read_timeout = 1
+            }
+          }
+
+          local proxy = assert(_M.new(request))
+
+          local res = assert(proxy:request(request))
+
+          assert.same(200, res.status)
+          assert.match('GET http://upstream:8091/request HTTP/1.1', res:read_body())
+      end)
     end)
 end)

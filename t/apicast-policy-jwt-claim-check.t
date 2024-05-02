@@ -564,3 +564,84 @@ the URI is not longer valid at all, and JWT is not expected to work correctly.
 ["yay, api backend\n","Request blocked due to JWT claim policy\n"]
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: JWT claim reject request with invalid token and URI contain special characters
+--- backend
+  location /transactions/oauth_authrep.xml {
+    content_by_lua_block {
+      ngx.exit(200)
+    }
+  }
+
+--- configuration
+{
+  "oidc": [
+    {
+      "issuer": "https://example.com/auth/realms/apicast",
+      "config": { "id_token_signing_alg_values_supported": [ "RS256" ] },
+      "keys": { "somekid": { "pem": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALClz96cDQ965ENYMfZzG+Acu25lpx2K\nNpAALBQ+catCA59us7+uLY5rjQR6SOgZpCz5PJiKNAdRPDJMXSmXqM0CAwEAAQ==\n-----END PUBLIC KEY-----", "alg": "RS256" } }
+    }
+  ],
+  "services": [
+    {
+      "id": 42,
+      "backend_version": "oauth",
+      "backend_authentication_type": "service_token",
+      "backend_authentication_value": "token-value",
+      "proxy": {
+        "authentication_method": "oidc",
+        "oidc_issuer_endpoint": "https://example.com/auth/realms/apicast",
+        "api_backend": "http://test:$TEST_NGINX_SERVER_PORT/",
+        "proxy_rules": [
+          { "pattern": "/groups/{groupID}$", "http_method": "GET", "metric_system_name": "hits", "delta": 1 }
+        ],
+        "policy_chain": [
+          {
+            "name": "apicast.policy.jwt_claim_check",
+            "configuration": {
+              "rules" : [{
+                  "operations": [
+                      {"op": "==", "jwt_claim": "foo", "jwt_claim_type": "plain", "value": "1"}
+                  ],
+                  "combine_op": "and",
+                  "methods": ["GET"],
+                  "resource": "/groups/{groupdID}$"
+              }]
+            }
+          },
+          { "name": "apicast.policy.apicast" }
+        ]
+      }
+    }
+  ]
+}
+--- upstream
+  location /groups {
+     content_by_lua_block {
+       ngx.say('yay, api backend');
+     }
+  }
+--- request eval
+[
+  "GET /groups/%2020",
+  "GET /groups/%2020%0A30"
+]
+--- more_headers eval
+::authorization_bearer_jwt('audience', {
+  realm_access => {
+    roles => [ 'director' ]
+  },
+  foo => "invalid",
+}, 'somekid')
+--- error_code eval
+[403, 403]
+--- response_body eval
+[
+  "Request blocked due to JWT claim policy\x{0a}",
+  "Request blocked due to JWT claim policy\x{0a}"
+]
+--- no_error_log
+[error]
+

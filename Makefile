@@ -1,18 +1,19 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 PROJECT_PATH := $(patsubst %/,%,$(dir $(MKFILE_PATH)))
+SHELL = /usr/bin/env bash -o pipefail
+.SHELLFLAGS = -ec
 .DEFAULT_GOAL := help
-DOCKER_COMPOSE = docker-compose
+
 DOCKER ?= $(shell which docker 2> /dev/null || echo "docker")
 REGISTRY ?= quay.io/3scale
 export TEST_NGINX_BINARY ?= openresty
 NGINX = $(shell which $(TEST_NGINX_BINARY))
-SHELL=/bin/bash -o pipefail
 
 NPROC ?= $(firstword $(shell nproc 2>/dev/null) 1)
 
 SEPARATOR="\n=============================================\n"
 
-DEVEL_IMAGE ?= quay.io/3scale/apicast-ci:openresty-1.19.3-pr1381
+DEVEL_IMAGE ?= quay.io/3scale/apicast-ci:openresty-1.19.3-23
 DEVEL_DOCKERFILE ?= Dockerfile.devel
 
 RUNTIME_IMAGE ?= quay.io/3scale/apicast:latest
@@ -63,9 +64,9 @@ export COMPOSE_PROJECT_NAME
 # The development image is also used in CI (circleCI) as the 'openresty' executor
 # When the development image changes, make sure to:
 # * build a new development image:
-#     make dev-build IMAGE_NAME=quay.io/3scale/apicast-ci:openresty-1.19.3-pr1381
+#     make dev-build IMAGE_NAME=quay.io/3scale/apicast-ci:openresty-X.Y.Z-{release_number}
 # * push to quay.io/3scale/apicast-ci with a fixed tag (avoid floating tags)
-#     docker push quay.io/3scale/apicast-ci:openresty-1.19.3-pr1381
+#     docker push quay.io/3scale/apicast-ci:openresty-X.Y.Z-{release_number}
 # * update .circleci/config.yaml openresty executor with the image URL
 .PHONY: dev-build
 dev-build: export OPENRESTY_RPM_VERSION?=1.19.3
@@ -143,7 +144,7 @@ prove: $(ROVER) dependencies nginx ## Test nginx
 prove-docker: export IMAGE_NAME ?= $(DEVEL_IMAGE)
 prove-docker: ## Test nginx inside docker
 	make -C $(PROJECT_PATH) -f $(MKFILE_PATH) apicast-source
-	$(DOCKER_COMPOSE) -f $(PROVE_DOCKER_COMPOSE_FILE) run --rm -T \
+	$(DOCKER) compose -f $(PROVE_DOCKER_COMPOSE_FILE) run --rm -T \
 		-v $(DOCKER_VOLUME_NAME):/opt/app-root/src prove | \
 		awk '/Result: NOTESTS/ { print "FAIL: NOTESTS"; print; exit 1 }; { print }'
 
@@ -158,37 +159,40 @@ push: ## Push image to the registry
 bash: export IMAGE_NAME ?= $(RUNTIME_IMAGE)
 bash: export SERVICE = gateway
 bash: ## Run bash inside the runtime image
-	$(DOCKER_COMPOSE) run --user=root --rm --entrypoint=bash $(SERVICE)
+	$(DOCKER) compose run --user=root --rm --entrypoint=bash $(SERVICE)
 
 gateway-logs: export IMAGE_NAME = does-not-matter
 gateway-logs:
-	$(DOCKER_COMPOSE) logs gateway
+	$(DOCKER) compose logs gateway
+
+opentracing-gateway: ## run gateway instrumented with opentracing
+	$(DOCKER) compose run opentracing-instrumented-gateway
 
 test-runtime-image: export IMAGE_NAME ?= $(RUNTIME_IMAGE)
 test-runtime-image: clean-containers ## Smoke test the runtime image. Pass any docker image in IMAGE_NAME parameter.
-	$(DOCKER_COMPOSE) --version
-	$(DOCKER_COMPOSE) run --rm --user 100001 gateway apicast -l -d
+	$(DOCKER) compose --version
+	$(DOCKER) compose run --rm --user 100001 gateway apicast -l -d
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm --user 100002 -e APICAST_CONFIGURATION_LOADER=boot -e THREESCALE_PORTAL_ENDPOINT=https://echo-api.3scale.net gateway bin/apicast -d
+	$(DOCKER) compose run --rm --user 100002 -e APICAST_CONFIGURATION_LOADER=boot -e THREESCALE_PORTAL_ENDPOINT=https://echo-api.3scale.net gateway bin/apicast -d
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm test sh -c 'sleep 5 && curl --fail http://gateway:8090/status/live'
+	$(DOCKER) compose run --rm test sh -c 'sleep 5 && curl --fail http://gateway:8090/status/live'
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm --user 100001 gateway bin/apicast --test
+	$(DOCKER) compose run --rm --user 100001 gateway bin/apicast --test
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm --user 100001 gateway bin/apicast --test --dev
+	$(DOCKER) compose run --rm --user 100001 gateway bin/apicast --test --dev
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm --user 100001 gateway bin/apicast --daemon
+	$(DOCKER) compose run --rm --user 100001 gateway bin/apicast --daemon
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm test bash -c 'for i in {1..5}; do curl --fail http://gateway:8090/status/live && break || sleep 1; done'
-	$(DOCKER_COMPOSE) logs gateway
+	$(DOCKER) compose run --rm test bash -c 'for i in {1..5}; do curl --fail http://gateway:8090/status/live && break || sleep 1; done'
+	$(DOCKER) compose logs gateway
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm test curl --fail -X PUT http://gateway:8090/config --data '{"services":[{"id":42}]}'
+	$(DOCKER) compose run --rm test curl --fail -X PUT http://gateway:8090/config --data '{"services":[{"id":42}]}'
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm test curl --fail http://gateway:8090/status/ready
+	$(DOCKER) compose run --rm test curl --fail http://gateway:8090/status/ready
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm test curl --fail -X POST http://gateway:8090/boot
+	$(DOCKER) compose run --rm test curl --fail -X POST http://gateway:8090/boot
 	@echo -e $(SEPARATOR)
-	$(DOCKER_COMPOSE) run --rm gateway bin/apicast -c http://echo-api.3scale.net -d -b
+	$(DOCKER) compose run --rm gateway bin/apicast -c http://echo-api.3scale.net -d -b
 
 $(PROJECT_PATH)/lua_modules $(PROJECT_PATH)/local $(PROJECT_PATH)/.cpanm $(PROJECT_PATH)/vendor/cache $(PROJECT_PATH)/.cache :
 	mkdir -p $@
@@ -201,9 +205,9 @@ development: GROUP := $(shell id -g $(USER))
 endif
 development: ## Run bash inside the development image
 	@echo "Running on $(os)"
-	- $(DOCKER_COMPOSE) -f $(DEVEL_DOCKER_COMPOSE_FILE) -f $(DEVEL_DOCKER_COMPOSE_VOLMOUNT_FILE) up -d
+	- $(DOCKER) compose -f $(DEVEL_DOCKER_COMPOSE_FILE) -f $(DEVEL_DOCKER_COMPOSE_VOLMOUNT_FILE) up -d
 	@ # https://github.com/moby/moby/issues/33794#issuecomment-312873988 for fixing the terminal width
-	$(DOCKER_COMPOSE) -f $(DEVEL_DOCKER_COMPOSE_FILE) -f $(DEVEL_DOCKER_COMPOSE_VOLMOUNT_FILE) exec -e COLUMNS="`tput cols`" -e LINES="`tput lines`" --user $(USER):$(GROUP) development bash
+	$(DOCKER) compose -f $(DEVEL_DOCKER_COMPOSE_FILE) -f $(DEVEL_DOCKER_COMPOSE_VOLMOUNT_FILE) exec -e COLUMNS="`tput cols`" -e LINES="`tput lines`" --user $(USER):$(GROUP) development bash
 
 stop-development: clean-containers ## Stop development environment
 
@@ -227,9 +231,9 @@ lua_modules/bin/rover:
 dependencies: dep_folders lua_modules carton  ## Install project dependencies
 
 clean-containers:
-	- $(DOCKER_COMPOSE) down --volumes --remove-orphans
-	- $(DOCKER_COMPOSE) -f $(PROVE_DOCKER_COMPOSE_FILE) down --volumes --remove-orphans
-	- $(DOCKER_COMPOSE) -f $(DEVEL_DOCKER_COMPOSE_FILE) -f $(DEVEL_DOCKER_COMPOSE_VOLMOUNT_FILE) down --volumes --remove-orphans
+	$(DOCKER) compose down --volumes --remove-orphans
+	$(DOCKER) compose -f $(PROVE_DOCKER_COMPOSE_FILE) down --volumes --remove-orphans
+	$(DOCKER) compose -f $(DEVEL_DOCKER_COMPOSE_FILE) -f $(DEVEL_DOCKER_COMPOSE_VOLMOUNT_FILE) down --volumes --remove-orphans
 
 clean-deps: ## Remove all local dependency folders
 	- rm -rf $(PROJECT_PATH)/lua_modules $(PROJECT_PATH)/local $(PROJECT_PATH)/.cpanm $(PROJECT_PATH)/vendor/cache $(PROJECT_PATH)/.cache :
@@ -238,6 +242,7 @@ clean: ## Remove all docker containers and images
 	make -C $(PROJECT_PATH) -f $(MKFILE_PATH) clean-containers
 	- docker rmi $(DEVEL_IMAGE) $(RUNTIME_IMAGE) apicast-runtime-image:latest apicast-development:latest --force
 	- rm -rf luacov.stats*.out
+	- rm -rf $(PROJECT_PATH)/t/servroot_*
 	make -C $(PROJECT_PATH) -f $(MKFILE_PATH) clean-deps
 
 doc/lua/index.html: $(shell find gateway/src -name '*.lua' 2>/dev/null) | lua_modules $(ROVER)
@@ -263,12 +268,12 @@ benchmark: export COMPOSE_PROJECT_NAME = apicast-benchmark
 benchmark: export WRK_REPORT ?= $(IMAGE_TAG).csv
 benchmark: export DURATION ?= 300
 benchmark:
-	- $(DOCKER_COMPOSE) up --force-recreate -d apicast
-	$(DOCKER_COMPOSE) run curl
+	- $(DOCKER) compose up --force-recreate -d apicast
+	$(DOCKER) compose run curl
 	## warmup round for $(DURATION)/10 seconds
-	DURATION=$$(( $(DURATION) / 10 )) $(DOCKER_COMPOSE) run wrk
+	DURATION=$$(( $(DURATION) / 10 )) $(DOCKER) compose run wrk
 	## run the real benchmark for $(DURATION) seconds
-	$(DOCKER_COMPOSE) run wrk
+	$(DOCKER) compose run wrk
 
 # Check http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help: ## Print this help

@@ -80,7 +80,7 @@ function _M.new()
   local verify_param = X509_VERIFY_PARAM(X509_V_FLAG_PARTIAL_CHAIN)
 
   ffi_assert(C.X509_STORE_set1_param(store, verify_param),1)
-  
+
   local self = setmetatable({
     store = store,
   }, mt)

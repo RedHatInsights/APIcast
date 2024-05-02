@@ -1,6 +1,6 @@
 log_format time '[$time_local] $target_host:$server_port $remote_addr:$remote_port "$request" $status $body_bytes_sent ($request_time) $post_action_impact';
 
-# Use maps as variables because some logs can be raised out of the server context 
+# Use maps as variables because some logs can be raised out of the server context
 # where variables cannot be set, this allow us to avoid a warning
 map "" $extended_access_log {
     default '';
@@ -33,6 +33,10 @@ server {
   opentracing_trace_locations off;
   {% endif %}
 
+  {% if opentelemetry != empty %}
+  opentelemetry_operation_name apicast_management;
+  {% endif %}
+
   {% include "conf.d/management.conf" %}
 }
 
@@ -43,6 +47,10 @@ server {
   {% if opentracing_tracer != empty %}
   opentracing_operation_name "apicast_mockbackend";
   opentracing_trace_locations off;
+  {% endif %}
+
+  {% if opentelemetry != empty %}
+  opentelemetry_operation_name apicast_mockbackend;
   {% endif %}
 
   {% include "conf.d/backend.conf" %}
@@ -60,6 +68,10 @@ server {
   {% if opentracing_tracer != empty %}
   opentracing_operation_name "apicast_echo";
   opentracing_trace_locations off;
+  {% endif %}
+
+  {% if opentelemetry != empty %}
+  opentelemetry_operation_name apicast_echo;
   {% endif %}
 
   {% include "conf.d/echo.conf" %}
@@ -113,6 +125,11 @@ server {
   opentracing_operation_name "apicast";
   opentracing_trace_locations on;
   opentracing_tag original_request_uri $original_request_uri;
+  {% endif %}
+
+  {% if opentelemetry != empty %}
+  opentelemetry_operation_name apicast;
+  opentelemetry_attribute original_request_uri $original_request_uri;
   {% endif %}
 
   {% include "http.d/ssl.conf" %}

@@ -1,0 +1,7 @@
+opentelemetry on;
+
+{% if opentelemetry_config_file == nil or opentelemetry_config_file == empty %}
+    {% assign opentelemetry_config_file = "conf.d/opentelemetry/jaeger.example.toml" | filesystem | first%}
+{% endif %}
+
+opentelemetry_config {{ opentelemetry_config_file }};

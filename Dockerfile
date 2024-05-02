@@ -1,6 +1,8 @@
 FROM registry.access.redhat.com/ubi8/ubi-minimal AS base
 
-ARG OPENRESTY_RPM_VERSION="1.19.3"
+ARG OPENRESTY_RPM_VERSION="1.19.3-23.el8"
+ARG LUAROCKS_VERSION="2.3.0"
+ARG JAEGERTRACING_CPP_CLIENT_RPM_VERSION="0.3.1-13.el8"
 
 LABEL summary="The 3scale API gateway (APIcast) is an OpenResty application, which consists of two parts: NGINX configuration and Lua files." \
       description="APIcast is not a standalone API gateway therefore it needs connection to the 3scale API management platform. The container includes OpenResty and uses LuaRocks to install dependencies (rocks are installed in the application folder)." \
@@ -30,7 +32,7 @@ RUN microdnf install -y 'yum-utils'
 
 RUN yum-config-manager --add-repo http://packages.dev.3sca.net/dev_packages_3sca_net.repo
 
-RUN PKGS="perl-interpreter-5.26.3 libyaml-devel-0.1.7 m4 openssl-devel git gcc make curl tar openresty-resty-${OPENRESTY_RPM_VERSION} luarocks-2.3.0 opentracing-cpp-devel-1.3.0 libopentracing-cpp1-1.3.0 jaegertracing-cpp-client openresty-opentracing-${OPENRESTY_RPM_VERSION}" && \
+RUN PKGS="openresty-resty-${OPENRESTY_RPM_VERSION} openresty-opentelemetry-${OPENRESTY_RPM_VERSION} tar openresty-opentracing-${OPENRESTY_RPM_VERSION} openresty-${OPENRESTY_RPM_VERSION} luarocks-${LUAROCKS_VERSION} opentracing-cpp-devel-1.3.0 libopentracing-cpp1-1.3.0 jaegertracing-cpp-client-${JAEGERTRACING_CPP_CLIENT_RPM_VERSION}" && \
     mkdir -p "$HOME" && \
     microdnf -y --setopt=tsflags=nodocs install $PKGS && \
     rpm -V $PKGS && \
@@ -44,7 +46,7 @@ ENV PATH="./lua_modules/bin:/usr/local/openresty/luajit/bin/:${PATH}" \
     LUA_CPATH="./lua_modules/lib/lua/5.1/?.so;;" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/app-root/lib"
 
-RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/pintsized/lua-resty-http-0.15-0.src.rock
+RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/pintsized/lua-resty-http-0.17.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/kikito/router-2.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/kikito/inspect-3.1.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/cdbattags/lua-resty-jwt-0.2.0-0.src.rock
@@ -52,10 +54,10 @@ RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/man
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/lua-resty-env-0.4.0-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/liquid-0.2.0-2.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/tieske/date-2.2-2.src.rock
-RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/tieske/penlight-1.7.0-1.src.rock
+RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/tieske/penlight-1.13.1-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/mpeterv/argparse-0.6.0-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/lua-resty-execvp-0.1.1-1.src.rock
-RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/luafilesystem-ffi-0.2.0-1.src.rock
+RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/hisham/luafilesystem-1.8.0-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/lua-resty-jit-uuid-0.0.7-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/knyar/nginx-lua-prometheus-0.20181120-2.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/hamish/lua-resty-iputils-0.3.0-1.src.rock

@@ -5,6 +5,7 @@ local Condition = require('apicast.conditions.condition')
 local MappingRule = require('apicast.mapping_rule')
 local Operation = require('apicast.conditions.operation')
 local TemplateString = require('apicast.template_string')
+local escape = require("resty.http.uri_escape")
 
 local ipairs = ipairs
 
@@ -58,6 +59,10 @@ end
 local function is_rule_denied_request(rule, context)
 
   local uri = context:get_uri()
+  -- URI need to be escaped to be able to match values with special characters
+  -- (like spaces)
+  -- Example:  if URI is `/foo /bar` it will be translated to `/foo%20/bar`
+  local escaped_uri = escape.escape_uri(uri)
   local request_method =  ngx.req.get_method()
 
   local resource = rule.resource:render(context)
@@ -71,7 +76,7 @@ local function is_rule_denied_request(rule, context)
       -- the name of the metric is irrelevant
       metric_system_name = 'hits'
     })
-    if mapping_rule:matches(request_method, uri) then
+    if mapping_rule:matches(request_method, escaped_uri) then
       mapping_rule_match = true
       break
     end

@@ -43,6 +43,8 @@ used.
 
 ## Configuration
 
+The policy expect the URLS following the `http://[<username>[:<passwd>]@]<host>[:<port>]` format, e.g.:
+
 ```
 "policy_chain": [
     {
@@ -51,15 +53,17 @@ used.
     {
       "name": "apicast.policy.http_proxy",
       "configuration": {
-          "all_proxy": "http://192.168.15.103:8888/",
-          "https_proxy": "https://192.168.15.103:8888/",
-          "http_proxy": "https://192.168.15.103:8888/"
+          "all_proxy": "http://foo:bar@192.168.15.103:8888/",
+          "https_proxy": "http://foo:bar@192.168.15.103:8888/",
+          "http_proxy": "http://foo:bar@192.168.15.103:8888/"
       }
     }
 ]
 ```
 
-- If http_proxy or https_proxy is not defined the all_proxy will be taken. 
+- If http_proxy or https_proxy is not defined the all_proxy will be taken.
+- The policy supports for proxy authentication via the `<username>` and `<passwd>` options.
+- The `<username>` and `<passwd>` are optional, all other components are required.
 
 ## Caveats
 
@@ -67,7 +71,7 @@ used.
   always send to the proxy. 
 - In case of HTTP_PROXY, HTTPS_PROXY or ALL_PROXY parameters are defined, this
   policy will overwrite those values. 
-- Proxy connection does not support authentication.
+- 3scale currently does not support connecting to an HTTP proxy via TLS. For this reason, the scheme of the HTTPS_PROXY value is restricted to http.
 
 
 ## Example Use case

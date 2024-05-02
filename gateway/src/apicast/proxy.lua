@@ -14,6 +14,7 @@ local Usage = require('apicast.usage')
 local errors = require('apicast.errors')
 local Upstream = require('apicast.upstream')
 local escape = require("resty.http.uri_escape")
+local cjson = require('cjson')
 
 local assert = assert
 local type = type
@@ -175,7 +176,8 @@ function _M.get_upstream(service, context)
 
   -- Due to API as a product, the api_backend is no longer needed because this
   -- can be handled by routing policy
-  if not service.api_backend then
+  local api_backend = service.api_backend
+  if not api_backend or api_backend == cjson.null or api_backend == '' then
     return nil, nil
   end
 
