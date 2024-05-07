@@ -26,13 +26,11 @@ ENV AUTO_UPDATE_INTERVAL=0 \
 
 RUN microdnf update
 
-RUN microdnf install -y 'yum-utils'
+RUN curl http://packages.dev.3sca.net/dev_packages_3sca_net.repo > /etc/yum.repos.d/dev_packages_3sca_net.repo
 
-RUN yum-config-manager --add-repo http://packages.dev.3sca.net/dev_packages_3sca_net.repo
-
-RUN PKGS="perl-interpreter-5.26.3 libyaml-devel-0.1.7 m4 openssl-devel git gcc make curl tar openresty-resty-${OPENRESTY_RPM_VERSION} luarocks-2.3.0 opentracing-cpp-devel-1.3.0 libopentracing-cpp1-1.3.0 jaegertracing-cpp-client openresty-opentracing-${OPENRESTY_RPM_VERSION}" && \
+RUN PKGS="perl-interpreter-5.26.3 libyaml-devel-0.1.7 m4 openssl-devel git-core gcc make curl tar openresty-${OPENRESTY_RPM_VERSION} openresty-resty-${OPENRESTY_RPM_VERSION} luarocks-2.3.0 opentracing-cpp-devel-1.3.0 libopentracing-cpp1-1.3.0 jaegertracing-cpp-client openresty-opentracing-${OPENRESTY_RPM_VERSION}" && \
     mkdir -p "$HOME" && \
-    microdnf -y --setopt=tsflags=nodocs install $PKGS && \
+    microdnf -y --setopt=tsflags=nodocs --setopt=install_weak_deps=0 install $PKGS && \
     rpm -V $PKGS && \
     microdnf clean all -y
 
@@ -61,7 +59,7 @@ RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/man
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/hamish/lua-resty-iputils-0.3.0-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/golgote/net-url-0.9-1.src.rock
 
-RUN microdnf -y remove yum-utils libyaml-devel m4 openssl-devel perl-Git-* git annobin-* gcc-plugin-annobin-* gcc luarocks && \
+RUN microdnf -y remove libyaml-devel m4 openssl-devel git-core annobin-* gcc-plugin-annobin-* gcc luarocks && \
     rm -rf /var/cache/yum && microdnf clean all -y && \
     rm -rf ./*
 
