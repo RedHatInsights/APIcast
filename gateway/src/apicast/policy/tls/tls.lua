@@ -6,10 +6,9 @@ local tab_new = require('table.new')
 local ssl = require('ngx.ssl')
 local cjson = require('cjson')
 local data_url = require('resty.data_url')
+local util = require('apicast.util')
 
 local insert = table.insert
-local io_open = io.open
-local io_type = io.type
 local pack = table.pack
 local ipairs = ipairs
 local setmetatable = setmetatable
@@ -48,33 +47,6 @@ end
 local EmbeddedCertificates = Config('certificate', 'certificate_key')
 local LocalFilesystemCertificates = Config('certificate_path', 'certificate_key_path')
 
-local function open_file(path)
-  local handle, err
-
-  if io_type(path) == 'handle' then
-    handle = path
-  else
-    handle, err = io_open(path)
-  end
-
-  return handle, err
-end
-
-local function read_file(path)
-  local handle, err = open_file(path)
-
-  if err or not handle then
-    return nil, err
-  end
-
-  handle:seek("set")
-  local output = handle:read("*a")
-  handle:close()
-
-  return output
-end
-
-
 local function parse_certificates(self, certificate, private_key)
   local err
   self.certificate, err = ssl.parse_pem_cert(certificate)
@@ -110,10 +82,10 @@ end
 function LocalFilesystemCertificates:parse()
   local certificate, certificate_key, err
 
-  certificate, err = read_file(self.certificate_path)
+  certificate, err = util.read_file(self.certificate_path)
   if err then return nil, err end
 
-  certificate_key, err = read_file(self.certificate_key_path)
+  certificate_key, err = util.read_file(self.certificate_key_path)
   if err then return nil, err end
 
   return parse_certificates(self, certificate, certificate_key)

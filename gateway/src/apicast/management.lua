@@ -9,6 +9,7 @@ local inspect = require('inspect')
 local resolver_cache = require('resty.resolver.cache')
 local env = require('resty.env')
 local policy_manifests_loader = require('apicast.policy_manifests_loader')
+local util = require('apicast.util')
 
 local policy_loader = require('apicast.policy_loader')
 
@@ -66,7 +67,7 @@ function _M.update_config()
   local file = ngx.req.get_body_file()
 
   if not data then
-    data = assert(io.open(file)):read('*a')
+    data = assert(util.read_file(file))
   end
 
   local config, err = configuration_parser.decode(data)

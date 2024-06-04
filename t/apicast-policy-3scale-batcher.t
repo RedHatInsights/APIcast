@@ -401,7 +401,6 @@ auth cache on every request (see rewrite_by_lua_block).
 --- upstream env
   location /api-backend {
     rewrite_by_lua_block {
-      require('resty.ctx').apply()
       ngx.shared.cached_auths:flush_all()
     }
      echo 'yay, api backend';
@@ -583,7 +582,6 @@ auth cache on every request (see rewrite_by_lua_block).
 --- upstream env
   location /api-backend {
     rewrite_by_lua_block {
-      require('resty.ctx').apply()
       ngx.shared.cached_auths:flush_all()
     }
      echo 'yay, api backend';

@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Fixed 3scale Batcher policy unable to handle `app_id`/`access_token` contains special characters [PR #1457](https://github.com/3scale/APIcast/pull/1457) [THREESCALE-10934](https://issues.redhat.com/browse/THREESCALE-10934)
 
+### Added
+
+- Bump openresty to 1.21.4.3 [PR #1461](https://github.com/3scale/APIcast/pull/1461) [THREESCALE-10601](https://issues.redhat.com/browse/THREESCALE-10601)
+
 ## [3.15.0] 2024-04-04
 
 ### Fixed

@@ -36,7 +36,7 @@ RUN PKGS="openresty-resty-${OPENRESTY_RPM_VERSION} openresty-opentelemetry-${OPE
     mkdir -p "$HOME" && \
     microdnf -y --setopt=tsflags=nodocs install $PKGS && \
     rpm -V $PKGS && \
-    microdnf clean all -y
+    yum clean all -y
 
 COPY site_config.lua /usr/share/lua/5.1/luarocks/site_config.lua
 COPY config-*.lua /usr/local/openresty/config-5.1.lua
@@ -47,6 +47,7 @@ ENV PATH="./lua_modules/bin:/usr/local/openresty/luajit/bin/:${PATH}" \
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/app-root/lib"
 
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/pintsized/lua-resty-http-0.17.1-0.src.rock
+RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/pintsized/lua-resty-http-0.17.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/kikito/router-2.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/kikito/inspect-3.1.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/cdbattags/lua-resty-jwt-0.2.0-0.src.rock
@@ -55,8 +56,10 @@ RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/man
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/liquid-0.2.0-2.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/tieske/date-2.2-2.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/tieske/penlight-1.13.1-1.src.rock
+RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/tieske/penlight-1.13.1-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/mpeterv/argparse-0.6.0-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/lua-resty-execvp-0.1.1-1.src.rock
+RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/hisham/luafilesystem-1.8.0-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/hisham/luafilesystem-1.8.0-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/lua-resty-jit-uuid-0.0.7-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/knyar/nginx-lua-prometheus-0.20181120-2.src.rock

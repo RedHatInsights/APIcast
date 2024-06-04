@@ -360,6 +360,8 @@ is always the valid one.
 [403, 200]
 
 === TEST 11: X-forwarded-for header with invalid data
+From 1.21.1, nginx will always returns an error if spaces or control
+characters are used in a header name
 --- configuration
 {
   "services": [
@@ -385,11 +387,9 @@ is always the valid one.
 }
 --- request
 GET /
---- response_body
-IP address not allowed
 --- more_headers eval
 X-forwarded-for: ,9.9.9.9
---- error_code: 403
+--- error_code: 400
 --- no_error_log
 [error]
 
@@ -420,10 +420,8 @@ X-forwarded-for: ,9.9.9.9
 }
 --- request
 GET /
---- response_body
-IP address not allowed
 --- more_headers eval
 X-forwarded-for: ,
---- error_code: 403
+--- error_code: 400
 --- no_error_log
 [error]
