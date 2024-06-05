@@ -76,7 +76,7 @@ content_by_lua_block {
 }
 --- response_body
 connected: 1
-ssl handshake: userdata
+ssl handshake: cdata
 HTTP/1.1 200 OK
 --- no_error_log
 [error]

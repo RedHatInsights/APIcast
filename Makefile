@@ -13,7 +13,7 @@ NPROC ?= $(firstword $(shell nproc 2>/dev/null) 1)
 
 SEPARATOR="\n=============================================\n"
 
-DEVEL_IMAGE ?= quay.io/3scale/apicast-ci:openresty-1.19.3-23
+DEVEL_IMAGE ?= quay.io/3scale/apicast-ci:openresty-1.21.4-1
 DEVEL_DOCKERFILE ?= Dockerfile.devel
 
 RUNTIME_IMAGE ?= quay.io/3scale/apicast:latest
@@ -69,7 +69,7 @@ export COMPOSE_PROJECT_NAME
 #     docker push quay.io/3scale/apicast-ci:openresty-X.Y.Z-{release_number}
 # * update .circleci/config.yaml openresty executor with the image URL
 .PHONY: dev-build
-dev-build: export OPENRESTY_RPM_VERSION?=1.19.3
+dev-build: export OPENRESTY_RPM_VERSION?=1.21.4
 dev-build: export LUAROCKS_VERSION?=2.3.0
 dev-build: IMAGE_NAME ?= apicast-development:latest
 dev-build: ## Build development image

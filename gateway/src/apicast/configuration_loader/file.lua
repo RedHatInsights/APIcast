@@ -1,7 +1,6 @@
 local len = string.len
 local format = string.format
 local tostring = tostring
-local open = io.open
 local assert = assert
 local sub = string.sub
 local util = require 'apicast.util'
@@ -39,7 +38,7 @@ local function is_path(path)
 end
 
 local function read_path(path)
-  return assert(open(path)):read('*a')
+  return assert(util.read_file(path))
 end
 
 local function read(path)

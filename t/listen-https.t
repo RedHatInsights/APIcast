@@ -38,7 +38,7 @@ content_by_lua_block {
 }
 --- response_body
 connected: 1
-ssl handshake: userdata
+ssl handshake: cdata
 --- error_code: 200
 --- no_error_log
 [error]
@@ -110,7 +110,7 @@ content_by_lua_block {
 }
 --- response_body
 connected: 1
-ssl handshake: userdata
+ssl handshake: cdata
 --- error_code: 200
 --- no_error_log
 [error]
@@ -210,11 +210,11 @@ content_by_lua_block {
 }
 --- response_body
 connected: 1
-ssl handshake: userdata
+ssl handshake: cdata
 HTTP/1.1 201 Created
 
 connected: 1
-ssl handshake: userdata
+ssl handshake: cdata
 HTTP/1.1 202 Accepted
 --- error_code: 200
 --- grep_error_log eval: qr/Falling back to routing by host/
