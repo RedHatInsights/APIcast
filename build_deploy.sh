@@ -2,7 +2,6 @@
 
 set -exv
 
-
 IMAGE="quay.io/cloudservices/apicast-base"
 IMAGE_TAG=$(git rev-parse --short=7 HEAD)
 LATEST_TAG="latest"
