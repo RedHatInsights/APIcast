@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8:8.10-1751443566
+FROM registry.access.redhat.com/ubi8:8.10-1752069635
 
 ARG OPENRESTY_RPM_VERSION="1.21.4-1.el8"
 ARG LUAROCKS_VERSION="2.3.0"
