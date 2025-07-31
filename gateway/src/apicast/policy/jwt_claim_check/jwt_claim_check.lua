@@ -25,12 +25,17 @@ function _M.new(config)
   local self = new(config)
   self.error_message = config.error_message or default_error_message
   self.rules = {}
+  self.enable_extended_context = config.enable_extended_context
   for _, rule in ipairs(config.rules) do
     local conditions = {}
     for _, condition in ipairs(rule.operations) do
+
       if condition.jwt_claim_type == "plain" then
         -- Due to this need to be fetched from the JWT claim, render  the match
         -- as liquid to be able to fetch the info from the JWT_claim
+        if self.enable_extended_context then
+          condition.jwt_claim = "jwt."..condition.jwt_claim
+        end
         condition.jwt_claim = "{{"..condition.jwt_claim.."}}"
       end
 
@@ -49,6 +54,7 @@ function _M.new(config)
     })
   end
 
+
   return self
 end
 
@@ -56,7 +62,7 @@ end
 -- on a provided rule with the request context.
 -- This function will only work if the request match on resource and in one of
 -- the methods, the methods that are not  defined in the rule will be allowed.
-local function is_rule_denied_request(rule, context)
+local function is_rule_denied_request(rule, context, enable_extended_context)
 
   local uri = context:get_uri()
   -- URI need to be escaped to be able to match values with special characters
@@ -86,13 +92,17 @@ local function is_rule_denied_request(rule, context)
     return false
   end
 
-  return not rule.condition:evaluate(context.jwt)
+  if enable_extended_context then
+    return not rule.condition:evaluate(context)
+  else
+    return not rule.condition:evaluate(context.jwt)
+  end
 end
 
 
 function _M:access(context)
   for _, rule in ipairs(self.rules) do
-    if is_rule_denied_request(rule, context) then
+    if is_rule_denied_request(rule, context, self.enable_extended_context) then
       return deny_request(self.error_message)
     end
   end

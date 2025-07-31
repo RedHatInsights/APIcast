@@ -1,5 +1,5 @@
 {
-  "$schema": "http://apicast.io/policy-v1.1/schema#manifest#",
+  "$schema": "http://apicast.io/policy-v1.1/schema",
   "name": "JWT Claim Check",
   "summary": "Allow or deny traffic based on a JWT claim",
   "description": [
@@ -11,7 +11,6 @@
   "configuration": {
     "definitions": {
       "value_type": {
-        "$id": "#/definitions/value_type",
         "type": "string",
         "oneOf": [{
           "enum": ["plain"],
@@ -82,7 +81,7 @@
                 "type": "object",
                 "properties": {
                   "jwt_claim": {
-                    "description": "String to get JWT claim", 
+                    "description": "String to get JWT claim",
                     "type": "string"
                   },
                   "jwt_claim_type": {
@@ -111,6 +110,11 @@
             }
           }
         }
+      },
+      "enable_extended_context": {
+        "description": "Whether to enable extened context when evaluate the condition",
+        "type": "boolean",
+        "default": false
       }
     }
   }

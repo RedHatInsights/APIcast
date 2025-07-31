@@ -3,6 +3,10 @@ use Test::APIcast::Blackbox 'no_plan';
 
 our $private_key = `cat t/fixtures/rsa.pem`;
 our $public_key = `cat t/fixtures/rsa.pub`;
+our $ec256_private_key = `cat t/fixtures/certs/ec256_private_key.pem`;
+our $ec256_public_key = `cat t/fixtures/certs/ec256_public_key.pem`;
+our $ec521_private_key = `cat t/fixtures/certs/ec521_private_key.pem`;
+our $ec521_public_key = `cat t/fixtures/certs/ec521_public_key.pem`;
 
 
 repeat_each(1);
@@ -440,3 +444,110 @@ my $jwt = encode_jwt(payload => {
 "Authorization: Bearer $jwt"
 --- error_log eval
 [ qr/Claim 'iss' \('unexpected_issuer'\) returned failure/ ]
+
+
+
+=== TEST 10: Verify JWT - ES256
+--- configuration env eval
+use JSON qw(to_json);
+
+to_json({
+  services => [{
+    id => 42,
+    backend_version => 'oauth',
+    backend_authentication_type => 'provider_key',
+    backend_authentication_value => 'fookey',
+    proxy => {
+        authentication_method => 'oidc',
+        oidc_issuer_endpoint => 'https://example.com/auth/realms/apicast',
+        api_backend => "http://test:$TEST_NGINX_SERVER_PORT/",
+        proxy_rules => [
+          { pattern => '/', http_method => 'GET', metric_system_name => 'hits', delta => 1  }
+        ]
+    }
+  }],
+  oidc => [{
+    issuer => 'https://example.com/auth/realms/apicast',
+    config => { id_token_signing_alg_values_supported => [ 'ES256' ] },
+    keys => { somekid => { pem => $::ec256_public_key, alg => 'ES256' } },
+  }]
+});
+--- upstream
+  location /test {
+    echo "yes";
+  }
+--- backend
+  location = /transactions/oauth_authrep.xml {
+    content_by_lua_block {
+      local expected = "provider_key=fookey&service_id=42&usage%5Bhits%5D=1&app_id=appid"
+      require('luassert').same(ngx.decode_args(expected), ngx.req.get_uri_args(0))
+    }
+  }
+--- request: GET /test
+--- error_code: 200
+--- more_headers eval
+use Crypt::JWT qw(encode_jwt);
+my $jwt = encode_jwt(payload => {
+  aud => 'something',
+  azp => 'appid',
+  sub => 'someone',
+  iss => 'https://example.com/auth/realms/apicast',
+  exp => time + 3600 }, key => \$::ec256_private_key, alg => 'ES256', extra_headers => { kid => 'somekid' });
+"Authorization: Bearer $jwt"
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: Verify JWT - ES512
+--- configuration env eval
+use JSON qw(to_json);
+
+to_json({
+  services => [{
+    id => 42,
+    backend_version => 'oauth',
+    backend_authentication_type => 'provider_key',
+    backend_authentication_value => 'fookey',
+    proxy => {
+        authentication_method => 'oidc',
+        oidc_issuer_endpoint => 'https://example.com/auth/realms/apicast',
+        api_backend => "http://test:$TEST_NGINX_SERVER_PORT/",
+        proxy_rules => [
+          { pattern => '/', http_method => 'GET', metric_system_name => 'hits', delta => 1  }
+        ]
+    }
+  }],
+  oidc => [{
+    issuer => 'https://example.com/auth/realms/apicast',
+    config => { id_token_signing_alg_values_supported => [ 'ES512' ] },
+    keys => { somekid => { pem => $::ec521_public_key, alg => 'ES512' } },
+  }]
+});
+--- upstream
+  location /test {
+    content_by_lua_block {
+        ngx.log(ngx.INFO, "\n---\n HEADER: ", ngx.get_headers()["Authorization"], "\n---\n")
+    }
+    echo "yes";
+  }
+--- backend
+  location = /transactions/oauth_authrep.xml {
+    content_by_lua_block {
+      local expected = "provider_key=fookey&service_id=42&usage%5Bhits%5D=1&app_id=appid"
+      require('luassert').same(ngx.decode_args(expected), ngx.req.get_uri_args(0))
+    }
+  }
+--- request: GET /test
+--- error_code: 200
+--- more_headers eval
+use Crypt::JWT qw(encode_jwt);
+my $jwt = encode_jwt(payload => {
+  aud => 'something',
+  azp => 'appid',
+  sub => 'someone',
+  iss => 'https://example.com/auth/realms/apicast',
+  exp => time + 3600 }, key => \$::ec521_private_key, alg => 'ES512', extra_headers => { kid => 'somekid' });
+"Authorization: Bearer $jwt"
+--- no_error_log
+[error]

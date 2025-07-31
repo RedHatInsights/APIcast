@@ -58,6 +58,34 @@ describe('JWT claim check policy', function()
         jwt_check:access(context)
         assert.same(ngx.status, 403)
       end)
+
+      it("with extended context", function()
+        local jwt_check = JWTClaimCheckPolicy.new({rules={
+          {
+            operations={{op="==", jwt_claim="foo", jwt_claim_type="plain", value="fooValue"}},
+            combine_op="and",
+            methods  = {"GET"},
+            resource = ngx.var.uri,
+          }},
+          enable_extended_context = true
+        })
+        jwt_check:access(context)
+        assert.not_same(ngx.status, 403)
+      end)
+
+      it("with extended context and invalid claim", function()
+        local jwt_check = JWTClaimCheckPolicy.new({rules={
+          {
+            operations={{op="==", jwt_claim="invalid", jwt_claim_type="plain", value="fooValue"}},
+            combine_op="and",
+            methods  = {"GET"},
+            resource = ngx.var.uri,
+          }},
+          enable_extended_context = true
+        })
+        jwt_check:access(context)
+        assert.same(ngx.status, 403)
+      end)
     end)
 
     describe("liquid JWT_claim_type", function()
@@ -83,6 +111,48 @@ describe('JWT claim check policy', function()
             resource = ngx.var.uri
           }
         }})
+        jwt_check:access(context)
+        assert.same(ngx.status, 403)
+      end)
+
+      it("with extended context", function()
+        local jwt_check = JWTClaimCheckPolicy.new({rules={
+          {
+            operations={{op="==", jwt_claim="{{jwt.foo}}", jwt_claim_type="liquid", value="fooValue"}},
+            combine_op="and",
+            methods  = {"GET"},
+            resource = ngx.var.uri,
+          }},
+          enable_extended_context = true
+        })
+        jwt_check:access(context)
+        assert.not_same(ngx.status, 403)
+      end)
+
+      it("with extended context and invalid claim", function()
+        local jwt_check = JWTClaimCheckPolicy.new({rules={
+          {
+            operations={{op="==", jwt_claim="{{invalid}}", jwt_claim_type="liquid", value="fooValue"}},
+            combine_op="and",
+            methods  = {"GET"},
+            resource = ngx.var.uri,
+          }},
+          enable_extended_context = true
+        })
+        jwt_check:access(context)
+        assert.same(ngx.status, 403)
+      end)
+
+      it("with extended context and invalid claim access via jwt prefix", function()
+        local jwt_check = JWTClaimCheckPolicy.new({rules={
+          {
+            operations={{op="==", jwt_claim="{{jwt.invalid}}", jwt_claim_type="liquid", value="fooValue"}},
+            combine_op="and",
+            methods  = {"GET"},
+            resource = ngx.var.uri,
+          }},
+          enable_extended_context = true
+        })
         jwt_check:access(context)
         assert.same(ngx.status, 403)
       end)
@@ -112,6 +182,48 @@ describe('JWT claim check policy', function()
             resource = ngx.var.uri
           }
         }})
+        jwt_check:access(context)
+        assert.same(ngx.status, 403)
+      end)
+
+      it("with extended context, claim is access via with jwt prefix", function()
+        local jwt_check = JWTClaimCheckPolicy.new({rules={
+          {
+            operations={{op="==", jwt_claim="{{jwt.foo}}", jwt_claim_type="liquid", value="{{jwt.foo}}", value_type="liquid"}},
+            combine_op="and",
+            methods  = {"GET"},
+            resource = ngx.var.uri,
+          }},
+          enable_extended_context = true
+        })
+        jwt_check:access(context)
+        assert.not_same(ngx.status, 403)
+      end)
+
+      it("with extended context, invalid claim", function()
+        local jwt_check = JWTClaimCheckPolicy.new({rules={
+          {
+            operations={{op="==", jwt_claim="{{jwt.invalid}}", jwt_claim_type="liquid", value="{{jwt.foo}}", value_type="liquid"}},
+            combine_op="and",
+            methods  = {"GET"},
+            resource = ngx.var.uri,
+          }},
+          enable_extended_context = true
+        })
+        jwt_check:access(context)
+        assert.same(ngx.status, 403)
+      end)
+
+      it("with extended context, invalid value", function()
+        local jwt_check = JWTClaimCheckPolicy.new({rules={
+          {
+            operations={{op="==", jwt_claim="{{jwt.foo}}", jwt_claim_type="liquid", value="{{foo}}", value_type="liquid"}},
+            combine_op="and",
+            methods  = {"GET"},
+            resource = ngx.var.uri,
+          }},
+          enable_extended_context = true
+        })
         jwt_check:access(context)
         assert.same(ngx.status, 403)
       end)

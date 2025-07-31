@@ -5,14 +5,13 @@ local ipairs = ipairs
 local insert = table.insert
 local rawset = rawset
 local tonumber = tonumber
-local pcall = pcall
 
 local tablex = require('pl.tablex')
 local deepcopy = tablex.deepcopy
 local resty_url = require 'resty.url'
 local http_ng = require "resty.http_ng"
 local user_agent = require 'apicast.user_agent'
-local cjson = require 'cjson'
+local cjson = require 'cjson.safe'
 local resty_env = require 'resty.env'
 local re = require 'ngx.re'
 local configuration = require 'apicast.configuration'
@@ -135,9 +134,8 @@ local function parse_proxy_configs(self, proxy_configs)
 end
 
 local function parse_resp_body(self, resp_body)
-  local ok, res = pcall(cjson.decode, resp_body)
-  if not ok then return nil, res end
-  local json = res
+  local json, err = cjson.decode(resp_body)
+  if not json then return nil, err end
 
   local proxy_configs = json.proxy_configs or {}
 
@@ -178,7 +176,7 @@ function _M:index_per_service()
 
   local service_regexp_filter  = resty_env.value("APICAST_SERVICES_FILTER_BY_URL")
   if service_regexp_filter then
-    local _, err = match("", service_regexp_filter, 'oj')
+    _, err = match("", service_regexp_filter, 'oj')
     if err then
       ngx.log(ngx.ERR, "APICAST_SERVICES_FILTER_BY_URL cannot compile, all services will be used: ", err)
       service_regexp_filter = nil
@@ -249,12 +247,11 @@ end
 -- @param env gateway environment
 -- @param page page in the paginated list. Defaults to 1 for the API, as the client will not send the page param.
 -- @param per_page number of results per page. Default and max is 500 for the API, as the client will not send the per_page param.
-local function proxy_configs_per_page(http_client, portal_endpoint, host, env, page, per_page)
+local function proxy_configs_per_page(http_client, portal_endpoint, host, page, per_page)
   local args = { host = host, version = "latest", page = page, per_page = per_page }
 
   local query_args = '?'..ngx.encode_args(args)
-  local base_url = proxy_configs_index_endpoint(portal_endpoint, env)
-  local url = base_url..query_args
+  local url = portal_endpoint..query_args
 
   -- http://${THREESCALE_PORTAL_ENDPOINT}/admin/api/account/proxy_configs/<env>.json?host=host&version=latest&page=1&per_page=500
   local res, err = http_client.get(url)
@@ -267,9 +264,9 @@ local function proxy_configs_per_page(http_client, portal_endpoint, host, env, p
   ngx.log(ngx.DEBUG, 'proxy configs get status: ', res.status, ' url: ', url, ' body: ', res.body)
 
   if res and res.status == 200 and res.body then
-    local ok, res = pcall(cjson.decode, res.body)
-    if not ok then return nil, res end
-    local json = res
+    local json
+    json, err = cjson.decode(res.body)
+    if not json then return nil, err end
 
     return json.proxy_configs or array()
   else
@@ -301,9 +298,10 @@ function _M:index(host)
   local all_results_per_page = false
   local current_page = 1
   local proxy_configs = array()
+  local portal_endpoint = proxy_configs_index_endpoint(self.endpoint, env)
 
   repeat
-    local page_proxy_configs, err = proxy_configs_per_page(http_client, self.endpoint, host, env, current_page, PROXY_CONFIGS_PER_PAGE)
+    local page_proxy_configs, err = proxy_configs_per_page(http_client, portal_endpoint, host, current_page, PROXY_CONFIGS_PER_PAGE)
     if not page_proxy_configs and err then
       return nil, err
     end
@@ -353,7 +351,11 @@ local function services_subset()
   local services = resty_env.value('APICAST_SERVICES_LIST') or resty_env.value('APICAST_SERVICES')
   if resty_env.value('APICAST_SERVICES') then ngx.log(ngx.WARN, 'DEPRECATION NOTICE: Use APICAST_SERVICES_LIST not APICAST_SERVICES as this will soon be unsupported') end
   if services and len(services) > 0 then
-    local ids = re.split(services, ',', 'oj')
+    local ids, err = re.split(services, ',', 'oj')
+    if not ids then
+      return nil, err
+    end
+
     for i=1, #ids do
       ids[i] = { service = { id = tonumber(ids[i]) } }
     end
@@ -370,8 +372,7 @@ end
 local function services_per_page(http_client, portal_endpoint, page, per_page)
   local encoded_args = ngx.encode_args({page = page, per_page = per_page})
   local query_args = encoded_args ~= '' and '?'..encoded_args
-  local base_url = services_index_endpoint(portal_endpoint)
-  local url = query_args and base_url..query_args or base_url
+  local url = query_args and portal_endpoint..query_args or portal_endpoint
 
   local res, err = http_client.get(url)
 
@@ -383,9 +384,9 @@ local function services_per_page(http_client, portal_endpoint, page, per_page)
   ngx.log(ngx.DEBUG, 'services get status: ', res.status, ' url: ', url, ' body: ', res.body)
 
   if res.status == 200 then
-    local ok, res = pcall(cjson.decode, res.body)
-    if not ok then return nil, res end
-    local json = res
+    local json
+    json, err = cjson.decode(res.body)
+    if not json then return nil, err end
 
     return json.services or array()
   else
@@ -431,9 +432,10 @@ function _M:services()
   local all_results_per_page = false
   local current_page = 1
   local services = array()
+  local service_endpoint = services_index_endpoint(endpoint)
 
   repeat
-    local page_services, err = services_per_page(http_client, endpoint, current_page, SERVICES_PER_PAGE)
+    local page_services, err = services_per_page(http_client, service_endpoint, current_page, SERVICES_PER_PAGE)
     if not page_services and err then
       return nil, err
     end

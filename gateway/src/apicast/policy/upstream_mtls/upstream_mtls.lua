@@ -2,6 +2,7 @@
 
 local ssl = require('ngx.ssl')
 local data_url = require('resty.data_url')
+local tls = require 'resty.tls'
 local util = require 'apicast.util'
 
 local pairs = pairs
@@ -58,12 +59,18 @@ local function read_ca_certificates(ca_certificates)
   local valid = false
   local store = X509_STORE.new()
   for _,certificate in pairs(ca_certificates) do
-    local cert, err = X509.new(certificate)
-    if cert then
-      valid = true
-      store:add(cert)
+    local normalized_cert = tls.normalize_pem_cert(certificate)
+
+    if normalized_cert then
+      local cert, err = X509.new(normalized_cert)
+      if cert then
+        valid = true
+        store:add(cert)
+      else
+        ngx.log(ngx.INFO, "cannot load certificate, err: ", err)
+      end
     else
-      ngx.log(ngx.INFO, "cannot load certificate, err: ", err)
+      ngx.log(ngx.WARN, "invalid cert")
     end
   end
 

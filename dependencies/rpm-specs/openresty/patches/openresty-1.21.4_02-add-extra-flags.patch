@@ -1,0 +1,44 @@
+From 5d94ccfc432d72c04ac0ecb665c9fedc9cd52087 Mon Sep 17 00:00:00 2001
+From: Eloy Coto <eloy.coto@gmail.com>
+Date: Fri, 31 Jan 2020 20:08:44 +0100
+Subject: [PATCH] Add extra flags
+
+Signed-off-by: Eloy Coto <eloy.coto@gmail.com>
+---
+ util/configure | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/util/configure b/util/configure
+index c664a22..8303b4d 100755
+--- a/util/configure
++++ b/util/configure
+@@ -941,7 +941,7 @@ _EOC_
+             }
+ 
+             my $extra_opts = " DESTDIR=\$(DESTDIR) LUA_INCLUDE_DIR=$lua_inc " .
+-                "LUA_CMODULE_DIR=$lualib_prefix LUA_MODULE_DIR=$lualib_prefix";
++                "LUA_CMODULE_DIR=$lualib_prefix LUA_MODULE_DIR=$lualib_prefix \$(EXTRA_FLAGS)";
+ 
+             if ($platform eq 'msys') {
+                 my $luajit_root = File::Spec->rel2abs("luajit-root");
+@@ -991,7 +991,7 @@ _EOC_
+ 
+             my $extra_opts =
+                 " DESTDIR=\$(DESTDIR) LUA_INCLUDE_DIR=$ENV{LUAJIT_INC} " .
+-                "LUA_LIB_DIR=$lualib_prefix";
++                "LUA_LIB_DIR=$lualib_prefix \$(EXTRA_FLAGS)";
+ 
+             if ($on_solaris) {
+                 $extra_opts .= " INSTALL=$root_dir/build/install";
+@@ -1039,7 +1039,7 @@ _EOC_
+             }
+ 
+             my $extra_opts = " DESTDIR=\$(DESTDIR) LUA_INCLUDE_DIR=$lua_inc " .
+-                "LUA_LIB_DIR=$lualib_prefix";
++                "LUA_LIB_DIR=$lualib_prefix \$(EXTRA_FLAGS)";
+ 
+             if ($platform eq 'msys') {
+                 my $luajit_root = File::Spec->rel2abs("luajit-root");
+-- 
+2.47.0
+

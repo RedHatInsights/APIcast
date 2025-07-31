@@ -39,6 +39,7 @@ describe('resty backend', function()
 
       assert.falsy(err)
       assert.truthy(response.error)
+      assert.equal("connection refused", response.error)
       assert.falsy(response.ok)
       assert.same(req, response.request)
     end)

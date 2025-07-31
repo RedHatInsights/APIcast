@@ -7,7 +7,7 @@ permissions:
   statuses: write
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read

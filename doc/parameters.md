@@ -94,7 +94,7 @@ that improve the performance of the whole gateway.
 
 ### `APICAST_OIDC_LOG_LEVEL`
 
-**Values:** debug | info | notice | warn | error | crit | alert | emerg
+**Values:** debug | info | notice | warn | err | crit | alert | emerg
 **Default:** err
 
 Allows to set the log level for the logs related to OpenID Connect integration
@@ -111,13 +111,6 @@ Allows to set the log level for the logs related to OpenID Connect integration
 
 The [Management API](./management-api.md) is powerful and can control the APIcast configuration.
 You should enable the debug level only for debugging.
-
-### `APICAST_OAUTH_TOKENS_TTL`
-
-**Values:** _a number_
-**Default:** 604800
-
-When configured to authenticate using OAuth, this param specifies the TTL (in seconds) of the tokens created.
 
 ### `APICAST_PATH_ROUTING`
 
@@ -344,37 +337,6 @@ Note that when the `THREESCALE_PORTAL_ENDPOINT` has no path, the gateway will it
 When `THREESCALE_PORTAL_ENDPOINT` environment variable is provided, the gateway will download the configuration from 3scale on initializing. The configuration includes all the settings provided on the Integration page of the API(s).
 
 It is **required** to provide either `THREESCALE_PORTAL_ENDPOINT` or `THREESCALE_CONFIG_FILE` (takes precedence) for the gateway to run successfully.
-
-
-### `OPENTRACING_TRACER`
-
-**Deprecated:** Check out [OPENTELEMETRY](#opentelemetry) configuration instead.
-**Example:** `jaeger`
-
-This environment variable controls which tracing library will be loaded, right now, there's only one opentracing tracer available, `jaeger`.
-
-If empty, opentracing support will be disabled.
-
-
-### `OPENTRACING_CONFIG`
-
-**Deprecated:** Check out [OPENTELEMETRY](#opentelemetry) configuration instead.
-
-This environment variable is used to determine the config file for the opentracing tracer, if `OPENTRACING_TRACER` is not set, this variable will be ignored.
-
-Each tracer has a default configuration file:
-    * `jaeger`: `conf.d/opentracing/jaeger.example.json`
-
-You can choose to mount a different configuration than the provided by default by setting the file path using this variable.
-
-**Example:** `/tmp/jaeger/jaeger.json`
-
-### `OPENTRACING_FORWARD_HEADER`
-
-**Deprecated:** Check out [OPENTELEMETRY](#opentelemetry) configuration instead.
-**Default:** `uber-trace-id`
-
-This environment variable controls the HTTP header used for forwarding opentracing information, this HTTP header will be forwarded to upstream servers.
 
 ### `APICAST_HTTPS_PORT`
 

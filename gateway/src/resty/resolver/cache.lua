@@ -92,7 +92,7 @@ function _M.store(self, qname, qtype, answer, force_ttl)
   end
 
   local key = name .. ":" .. qtype
-  ngx.log(ngx.DEBUG, 'resolver cache write ', key, ' with TLL ', ttl)
+  ngx.log(ngx.DEBUG, 'resolver cache write ', key, ' with TTL ', ttl)
 
   return cache:set(key, answer, ttl)
 end

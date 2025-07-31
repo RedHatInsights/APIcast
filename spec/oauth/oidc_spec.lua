@@ -3,7 +3,7 @@ local _M = require('apicast.oauth.oidc')
 local jwt_validators = require('resty.jwt-validators')
 local jwt = require('resty.jwt')
 
-local rsa = require('fixtures.rsa')
+local certs = require('fixtures.certs')
 local ngx_variable = require('apicast.policy.ngx_variable')
 
 describe('OIDC', function()
@@ -43,20 +43,72 @@ describe('OIDC', function()
     local oidc_config = {
       issuer = 'https://example.com/auth/realms/apicast',
       config = { id_token_signing_alg_values_supported = { 'RS256', 'HS256' } },
-      keys = { somekid = { pem = rsa.pub, alg = 'RS256' } },
+      keys = { somekid = { pem = certs.rsa_public_key, alg = 'RS256' } },
+    }
+    local es256_oidc_config = {
+      issuer = 'https://example.com/auth/realms/apicast',
+      config = { id_token_signing_alg_values_supported = { 'ES256'} },
+      keys = { somekid = { pem = certs.es256_public_key, alg = 'ES256' } },
+    }
+    local es512_oidc_config = {
+      issuer = 'https://example.com/auth/realms/apicast',
+      config = { id_token_signing_alg_values_supported = { 'ES512' } },
+      keys = { somekid = { pem = certs.es512_public_key, alg = 'ES512' } },
     }
     local oidc_config_no_alg = {
       issuer = 'https://example.com/auth/realms/apicast',
       config = { id_token_signing_alg_values_supported = { 'RS256', 'HS256' } },
-      keys = { somekid = { pem = rsa.pub } },
+      keys = { somekid = { pem = certs.rsa_public_key } },
     }
 
     before_each(function() jwt_validators.set_system_clock(function() return 0 end) end)
 
-    it('successfully verifies token', function()
+    it('successfully verifies token using RS256', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
+        payload = {
+          iss = oidc_config.issuer,
+          aud = 'notused',
+          azp = 'ce3b2e5e',
+          sub = 'someone',
+          exp = ngx.now() + 10,
+        },
+      })
+
+      local credentials, ttl, _, err = oidc:transform_credentials({ access_token = access_token })
+
+      assert(credentials, err)
+
+      assert.same({ app_id  = "ce3b2e5e" }, credentials)
+      assert.equal(10, ttl)
+    end)
+
+    it('successfully verifies token using ES256', function()
+      local oidc = _M.new(es256_oidc_config)
+      local access_token = jwt:sign(certs.es256_private_key, {
+        header = { typ = 'JWT', alg = 'ES256', kid = 'somekid' },
+        payload = {
+          iss = oidc_config.issuer,
+          aud = 'notused',
+          azp = 'ce3b2e5e',
+          sub = 'someone',
+          exp = ngx.now() + 10,
+        },
+      })
+
+      local credentials, ttl, _, err = oidc:transform_credentials({ access_token = access_token })
+
+      assert(credentials, err)
+
+      assert.same({ app_id  = "ce3b2e5e" }, credentials)
+      assert.equal(10, ttl)
+    end)
+
+    it('successfully verifies token using ES512', function()
+      local oidc = _M.new(es512_oidc_config)
+      local access_token = jwt:sign(certs.es512_private_key, {
+        header = { typ = 'JWT', alg = 'ES512', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
           aud = 'notused',
@@ -76,7 +128,7 @@ describe('OIDC', function()
 
     it('caches verification', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -103,7 +155,7 @@ describe('OIDC', function()
 
     it('verifies iss', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -124,7 +176,7 @@ describe('OIDC', function()
       stub(ngx, 'now', now)
 
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -142,7 +194,7 @@ describe('OIDC', function()
 
     it('verifies iat', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -160,7 +212,7 @@ describe('OIDC', function()
 
     it('verifies exp', function()
       local oidc = _M.new(oidc_config, {})
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -184,7 +236,7 @@ describe('OIDC', function()
 
     it('verifies alg', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'HS512' },
         payload = { },
       })
@@ -197,7 +249,7 @@ describe('OIDC', function()
 
     it('validation fails when typ is invalid', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -217,7 +269,7 @@ describe('OIDC', function()
 
     it('validation is successful when typ is included and is Bearer', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -236,7 +288,7 @@ describe('OIDC', function()
 
     it('validation fails when jwk.alg does not match jwt.header.alg', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'HS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -256,7 +308,7 @@ describe('OIDC', function()
 
     it('validation passes when jwk.alg matches jwt.header.alg', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -275,7 +327,7 @@ describe('OIDC', function()
 
     it('validation passes when jwk.alg does not exist', function()
       local oidc = _M.new(oidc_config_no_alg)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -294,7 +346,7 @@ describe('OIDC', function()
 
     it('token was signed by a different key', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'otherkid' },
         payload = {
           iss = oidc_config.issuer,
@@ -312,7 +364,7 @@ describe('OIDC', function()
 
     it('token was signed by a different issuer', function()
       local oidc = _M.new(oidc_config)
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = 'other_issuer',
@@ -334,7 +386,7 @@ describe('OIDC', function()
         stub(ngx_variable, 'available_context', function(context) return context end)
       end)
 
-      local access_token = jwt:sign(rsa.private, {
+      local access_token = jwt:sign(certs.rsa_private_key, {
         header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
         payload = {
           iss = oidc_config.issuer,
@@ -350,7 +402,7 @@ describe('OIDC', function()
         local config = {
           issuer = 'https://example.com/auth/realms/apicast',
           config = { id_token_signing_alg_values_supported = { 'RS256' } },
-          keys = { somekid = { pem = rsa.pub, alg = 'RS256' } }}
+          keys = { somekid = { pem = certs.rsa_public_key, alg = 'RS256' } }}
 
         for key,value in pairs(params) do
           config[key] = value

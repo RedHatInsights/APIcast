@@ -1,7 +1,7 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal AS base
+FROM registry.access.redhat.com/ubi8
 
 ARG OPENRESTY_RPM_VERSION="1.21.4-1.el8"
-ARG LUAROCKS_VERSION="2.3.0"
+ARG LUAROCKS_VERSION="3.11.1"
 ARG JAEGERTRACING_CPP_CLIENT_RPM_VERSION="0.3.1-13.el8"
 
 LABEL summary="The 3scale API gateway (APIcast) is an OpenResty application, which consists of two parts: NGINX configuration and Lua files." \
@@ -36,7 +36,17 @@ RUN PKGS="openresty-resty-${OPENRESTY_RPM_VERSION} openresty-opentelemetry-${OPE
     mkdir -p "$HOME" && \
     microdnf -y --setopt=tsflags=nodocs install $PKGS && \
     rpm -V $PKGS && \
-    microdnf clean all -y
+    yum clean all -y
+
+RUN dnf install -y 'dnf-command(config-manager)'
+
+RUN yum config-manager --add-repo http://packages.dev.3sca.net/dev_packages_3sca_net.repo
+
+RUN PKGS="openresty-resty-${OPENRESTY_RPM_VERSION} openresty-opentelemetry-${OPENRESTY_RPM_VERSION} openresty-${OPENRESTY_RPM_VERSION} luarocks-${LUAROCKS_VERSION}" && \
+    mkdir -p "$HOME" && \
+    yum -y --setopt=tsflags=nodocs install $PKGS && \
+    rpm -V $PKGS && \
+    yum clean all -y
 
 COPY site_config.lua /usr/share/lua/5.1/luarocks/site_config.lua
 COPY config-*.lua /usr/local/openresty/config-5.1.lua
@@ -49,7 +59,6 @@ ENV PATH="./lua_modules/bin:/usr/local/openresty/luajit/bin/:${PATH}" \
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/pintsized/lua-resty-http-0.17.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/kikito/router-2.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/kikito/inspect-3.1.1-0.src.rock
-RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/cdbattags/lua-resty-jwt-0.2.0-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/lua-resty-url-0.3.5-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/lua-resty-env-0.4.0-1.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/3scale/liquid-0.2.0-2.src.rock
@@ -65,8 +74,16 @@ RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/man
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/membphis/lua-resty-ipmatcher-0.6.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/fffonion/lua-resty-openssl-1.5.1-1.src.rock
 
-RUN microdnf -y remove yum-utils openssl-devel perl-Git-* git annobin-* gcc-plugin-annobin-* gcc luarocks && \
-    rm -rf /var/cache/yum && microdnf clean all -y && \
+# Install lua-resty-jwt from source due to Authentication Bypass bug
+# See https://github.com/cdbattags/lua-resty-jwt/issues/61
+RUN cd /tmp \
+    && git clone --recurse-submodules https://github.com/cdbattags/lua-resty-jwt \
+    && cd lua-resty-jwt \
+    && git reset --hard d1558e2 \
+    && luarocks make --tree /usr/local lua-resty-jwt-dev-0.rockspec
+
+RUN yum -y remove libyaml-devel m4 openssl-devel git gcc luarocks && \
+    rm -rf /var/cache/yum && yum clean all -y && \
     rm -rf ./*
 
 COPY gateway/. /opt/app-root/src/

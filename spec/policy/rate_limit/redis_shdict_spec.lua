@@ -10,6 +10,23 @@ describe('Redis Shared Dictionary', function()
     local redis
     local shdict
 
+    describe('new', function()
+        it('invalid redis url', function()
+            local _, err = redis_shdict.new{ host = "invalid", port = 6379 }
+            assert.match("failed to connect to redis on invalid:6379", err)
+        end)
+
+        it('invalid redis auth', function()
+            local _, err = redis_shdict.new{ host = redis_host, port = redis_port, db=1 , password = "invalid"}
+            assert.match("failed to auth on redis ".. redis_host .. ":" .. redis_port ..", err: ERR AUTH <password> called without any password configured for the default user. Are you sure your configuration is correct?", err)
+        end)
+
+        it('invalid redis db', function()
+            local _, err = redis_shdict.new{ host = redis_host, port = redis_port, db = 1000}
+            assert.match("failed to select db 1000 on redis " .. redis_host ..":" .. redis_port .. ", err: ERR DB index is out of range", err)
+        end)
+    end)
+
     before_each(function()
         local options = { host = redis_host, port = redis_port, db = 1 }
         redis = assert(ts.connect_redis(options))
@@ -17,6 +34,7 @@ describe('Redis Shared Dictionary', function()
 
         assert(redis:flushdb())
     end)
+
 
     describe('flush_all', function()
         it('removes all records', function()

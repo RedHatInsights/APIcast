@@ -4,6 +4,10 @@
 - [**Conditions**](#conditions)
 - [**Example config**](#example-config)
 
+## NOTE
+This is policy is not available in the admin portal UI, however, you still be
+able to configure it via 3scale [Product CR](https://github.com/3scale/3scale-operator/blob/master/doc/product-reference.md#user-content-policyconfigspec)
+
 ## Description
 
 The conditional policy is a bit different from the rest because it contains a
@@ -42,6 +46,10 @@ When the request is not a POST, the order of execution for each phase is:
 2) Caching
 3) Upstream
 
+NOTE: when one or more policies in conditional chain are invalid, APIcast will
+skip the invalid policy and load the next policy in the chain, which may lead
+to unexpected behavior. If you want to terminate the chain, add an `on_failed`
+policy to the chain.
 
 ## Conditions
 
@@ -87,9 +95,6 @@ the one above plus the value of the `Backend` header:
 }
 ```
 
-To know more about the details of what is exactly supported please check the
-[policy config schema](apicast-policy.json).
-
 These are the variables supported in liquid:
 * uri
 * host
@@ -131,6 +136,42 @@ the `Backend` header of the request is `staging`:
                   }
                ]
             }
+         }
+      ]
+   }
+}
+
+```
+
+With `on-failed` policy
+
+```json
+{
+   "name":"conditional",
+   "version":"builtin",
+   "configuration":{
+      "condition":{
+         "operations":[
+            {
+               "left":"{{ headers['Backend'] }}",
+               "left_type":"liquid",
+               "op":"==",
+               "right":"staging"
+            }
+         ]
+      },
+      "policy_chain":[
+         {
+           "name": "example",
+           "version": "1.0",
+           "configuration": {}
+         },
+         {
+           "name": "on_failed",
+           "version": "builtin",
+           "configuration": {
+             "error_status_code": 419
+           }
          }
       ]
    }

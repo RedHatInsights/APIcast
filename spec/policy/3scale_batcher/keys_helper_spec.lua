@@ -2,7 +2,7 @@ local keys_helper = require 'apicast.policy.3scale_batcher.keys_helper'
 local Usage = require 'apicast.usage'
 local Transaction = require 'apicast.policy.3scale_batcher.transaction'
 local JWT = require('resty.jwt')
-local rsa = require('fixtures.rsa')
+local certs = require('fixtures.certs')
 
 local access_token = setmetatable({
   header = { typ = 'JWT', alg = 'RS256', kid = 'somekid' },
@@ -12,7 +12,7 @@ local access_token = setmetatable({
     aud = 'one',
     exp = ngx.now() + 3600,
   },
-}, { __tostring = function(jwt) return JWT:sign(rsa.private, jwt) end })
+}, { __tostring = function(jwt) return JWT:sign(certs.rsa_private_key, jwt) end })
 
 describe('Keys Helper', function()
   describe('.key_for_cached_auth', function()

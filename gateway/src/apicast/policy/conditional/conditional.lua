@@ -1,54 +1,66 @@
 local ipairs = ipairs
 local insert = table.insert
 
-local policy = require('apicast.policy')
+local Policy = require('apicast.policy')
 local policy_phases = require('apicast.policy').phases
 local PolicyChain = require('apicast.policy_chain')
 local Condition = require('apicast.conditions.condition')
 local Operation = require('apicast.conditions.operation')
 local ngx_variable = require('apicast.policy.ngx_variable')
 
-local _M = policy.new('Conditional policy', 'builtin')
+local _M = Policy.new('Conditional policy', 'builtin')
 
 local new = _M.new
 
-local function build_policy_chain(chain)
-  if not chain then return {} end
+do
+  local null = ngx.null
 
-  local policies = {}
+  local function policy_configuration(policy)
+    local config = policy.configuration
 
-  for i=1, #chain do
-    policies[i] = PolicyChain.load_policy(
-      chain[i].name,
-      chain[i].version,
-      chain[i].configuration
+    if config and config ~= null then
+      return config
+    end
+  end
+
+  local function build_policy_chain(policies)
+    if not policies then return {} end
+
+    local chain = PolicyChain.new()
+
+    for i=1, #policies do
+      chain:add_policy(
+        policies[i].name,
+        policies[i].version,
+        policy_configuration(policies[i])
+      )
+    end
+
+    return chain
+  end
+
+  local function build_operations(config_ops)
+    local res = {}
+
+    for _, op in ipairs(config_ops) do
+      insert(res, Operation.new(op.left, op.left_type, op.op, op.right, op.right_type))
+    end
+
+    return res
+  end
+
+  function _M.new(config)
+    local self = new(config)
+
+    config.condition = config.condition or {}
+    self.condition = Condition.new(
+      build_operations(config.condition.operations),
+      config.condition.combine_op
     )
+
+    self.policy_chain = build_policy_chain(config.policy_chain)
+    return self
   end
-
-  return PolicyChain.new(policies)
-end
-
-local function build_operations(config_ops)
-  local res = {}
-
-  for _, op in ipairs(config_ops) do
-    insert(res, Operation.new(op.left, op.left_type, op.op, op.right, op.right_type))
-  end
-
-  return res
-end
-
-function _M.new(config)
-  local self = new(config)
-
-  config.condition = config.condition or {}
-  self.condition = Condition.new(
-    build_operations(config.condition.operations),
-    config.condition.combine_op
-  )
-
-  self.policy_chain = build_policy_chain(config.policy_chain)
-  return self
 end
 
 function _M:export()

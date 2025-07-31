@@ -1,0 +1,268 @@
+diff --git a/util/configure b/util/configure
+index d461294..c664a22 100755
+--- a/util/configure
++++ b/util/configure
+@@ -1198,9 +1198,9 @@ _EOC_
+ 
+     # configure restydoc indexes
+ 
+-    push @make_install_cmds,
+-        "cp $root_dir/build/resty.index \$(DESTDIR)$prefix/",
+-        "cp -r $root_dir/build/pod \$(DESTDIR)$prefix/";
++    # push @make_install_cmds,
++    #     "cp $root_dir/build/resty.index \$(DESTDIR)$prefix/",
++    #     "cp -r $root_dir/build/pod \$(DESTDIR)$prefix/";
+ 
+     # prepare nginx configure line
+ 
+diff --git a/util/get-tarball b/util/get-tarball
+index f967fc1..6dfb4af 100755
+--- a/util/get-tarball
++++ b/util/get-tarball
+@@ -11,12 +11,55 @@ fi
+ url=$1
+ outfile=$3
+ cachefile=$work/$outfile
++original_path=$(pwd)
++
++
+ if [ -s $cachefile ]; then
++    echo "Found Cache file for $url: $cachefile"
+     cp $work/$outfile $outfile || exit 1
+-else
+-    wget $1 -O $3 || exit 1
+-    if [ $? == 0 ]; then
+-        cp $3 $work/ || exit 1
+-    fi
++    exit 0
+ fi
+ 
++
++function get_target() {
++  local url=$1
++  local outfile=$2
++  echo $url
++  local target=$(echo $url | awk '{
++    gsub(/github.com/, "code.engineering.redhat.com/gerrit");
++    match($0, /(.+)\/tarball\/(.+)/,arr);
++    print arr[1] " " arr[2]; }');
++  local target_url=$(echo $target | awk '{print $1}')
++  local target_version=$(echo $target | awk '{print $2}')
++  local prefix=$(echo $target_url | awk '{
++    match($0, /(.+)\/gerrit\/(.+)/,arr);
++    print arr[2]; }' | sed "s/\//-/g");
++  echo "$target_url $target_version" >> $root/source-repos
++  local repo_name=$(echo $target_url | awk -F '/' '{print $NF}')
++  local cached_source_repo="$root/$repo_name-$target_version.tar.gz"
++  # local cached_source_repo="/tmp/$repo_name"
++  local tmpFolder=$(mktemp -u)
++
++  if [ -s $cached_source_repo ]; then
++    local target_tmp_folder=$tmpFolder/$prefix-$target_version/
++    mkdir -p $target_tmp_folder
++    cd $tmpFolder
++    tar -xvzf $cached_source_repo -C $target_tmp_folder --strip-component=1
++    ls -lah
++    tar -czvf $work/$outfile $prefix-$target_version
++  else
++    if [[ ! -z "$FORCE_CACHE" ]]; then
++        echo "FORCE CACHE is enabled, cannot get the cached filed from $cached_source_repo" 1>&2
++        exit 1
++    fi
++    git clone -b $target_version $target_url $tmpFolder
++    cd $tmpFolder
++    git archive --format=tar.gz --prefix="$prefix-$target_version/" $target_version > $work/$outfile
++  fi
++
++
++  rm -rf $tmpFolder
++  cp $work/$outfile $original_path/$outfile
++}
++
++get_target $url $outfile
+diff --git a/util/mirror-tarballs b/util/mirror-tarballs
+index 63fb6c7..8c83975 100755
+--- a/util/mirror-tarballs
++++ b/util/mirror-tarballs
+@@ -28,9 +28,12 @@ fi
+ #################################
+ 
+ ver="$main_ver"
+-$root/util/get-tarball "https://openresty.org/download/nginx-$ver.tar.gz" -O nginx-$ver.tar.gz || exit 1
+-tar -xzf nginx-$ver.tar.gz || exit 1
++$root/util/get-tarball "https://github.com/nginx/nginx/tarball/release-$ver" -O nginx-release-$ver.tar.gz || exit 1
++tar -xzvf nginx-release-$ver.tar.gz || exit 1
++mv nginx-nginx-release-$ver nginx-$ver || exit 1
+ cd nginx-$ver || exit 1
++mv docs/text/README ./ || exit 1
++mv auto/configure ./ || exit 1
+ 
+ echo "$info_txt applying the nginx-$main_ver-win32_max_err_str.patch"
+ patch -p1 < $root/patches/nginx-$main_ver-win32_max_err_str.patch || exit 1
+@@ -560,7 +563,7 @@ mv openresty-xss-nginx-module-* xss-nginx-module-$ver || exit 1
+ ver=0.3.2
+ $root/util/get-tarball "https://github.com/simplresty/ngx_devel_kit/tarball/v$ver" -O ngx_devel_kit-$ver.tar.gz
+ tar -xzf ngx_devel_kit-$ver.tar.gz || exit 1
+-mv vision5-ngx_devel_kit-* ngx_devel_kit-$ver || exit 1
++mv simplresty-ngx_devel_kit-* ngx_devel_kit-$ver || exit 1
+ 
+ #################################
+ 
+@@ -600,9 +603,9 @@ mv openresty-drizzle-nginx-module-* drizzle-nginx-module-$ver || exit 1
+ #################################
+ 
+ ver=0.10.25
+-$root/util/get-tarball "https://github.com/openresty/lua-nginx-module/archive/v$ver.tar.gz" -O lua-nginx-module-$ver.tar.gz || exit 1
+-tar -xzf lua-nginx-module-$ver.tar.gz || exit 1
+-mv lua-nginx-module-$ver ngx_lua-$ver || exit 1
++$root/util/get-tarball "https://github.com/openresty/lua-nginx-module/tarball/v$ver" -O lua-nginx-module-$ver.tar.gz || exit 1
++tar -xvzf lua-nginx-module-$ver.tar.gz || exit 1
++mv openresty-lua-nginx-module-v$ver ngx_lua-$ver || exit 1
+ 
+ #################################
+ 
+@@ -671,9 +674,9 @@ mv openresty-encrypted-session-nginx-module-* encrypted-session-nginx-module-$ve
+ #################################
+ 
+ ver=0.3.9
+-$root/util/get-tarball "https://people.freebsd.org/~osa/ngx_http_redis-$ver.tar.gz" -O redis-nginx-module-$ver.tar.gz || exit 1
++$root/util/get-tarball "https://github.com/osokin/ngx_http_redis/tarball/$ver" -O redis-nginx-module-$ver.tar.gz || exit 1
+ tar -xzf redis-nginx-module-$ver.tar.gz || exit 1
+-mv ngx_http_redis-* redis-nginx-module-$ver || exit 1
++mv osokin-ngx_http_redis-* redis-nginx-module-$ver || exit 1
+ 
+ cd redis-nginx-module-$ver
+ echo "applying ngx_http_redis-$ver-variables_in_redis_pass.patch"
+@@ -725,9 +728,9 @@ mv openresty-opm-* opm-$ver || exit 1
+ #################################
+ 
+ ver=2.1-20230410
+-$root/util/get-tarball "https://github.com/openresty/luajit2/archive/v$ver.tar.gz" -O "LuaJIT-$ver.tar.gz" || exit 1
+-tar -xzf LuaJIT-$ver.tar.gz || exit 1
+-mv luajit2-* LuaJIT-$ver || exit 1
++$root/util/get-tarball "https://github.com/openresty/luajit2/tarball/v$ver" -O "LuaJIT-$ver.tar.gz" || exit 1
++tar -xzvf LuaJIT-$ver.tar.gz || exit 1
++mv openresty-luajit2-* LuaJIT-$ver || exit 1
+ 
+ cd LuaJIT-$ver || exit 1;
+ echo "$info_txt applying the luajit-win32-default-paths patch for luajit $ver"
+@@ -738,14 +741,16 @@ cd .. || exit 1
+ #################################
+ 
+ ver=2.1.0.11
+-$root/util/get-tarball "https://github.com/openresty/lua-cjson/archive/$ver.tar.gz" -O "lua-cjson-$ver.tar.gz" || exit 1
++$root/util/get-tarball "https://github.com/openresty/lua-cjson/tarball/$ver" -O "lua-cjson-$ver.tar.gz" || exit 1
+ tar -xzf lua-cjson-$ver.tar.gz || exit 1
++mv openresty-lua-cjson-* lua-cjson-$ver || exit 1
+ 
+ #################################
+ 
+ ver=0.13
+-$root/util/get-tarball "https://github.com/openresty/lua-redis-parser/archive/v$ver.tar.gz" -O "lua-redis-parser-$ver.tar.gz" || exit 1
++$root/util/get-tarball "https://github.com/openresty/lua-redis-parser/tarball/v$ver" -O "lua-redis-parser-$ver.tar.gz" || exit 1
+ tar -xzf lua-redis-parser-$ver.tar.gz || exit 1
++mv openresty-lua-redis-parser-v* lua-redis-parser-$ver || exit 1
+ 
+ #################################
+ 
+@@ -943,53 +948,53 @@ nginx_xml2pod=$bundle_dir/$resty_cli/bin/nginx-xml2pod
+ 
+ # generate restydoc index from nginx docs
+ 
+-curdir=$PWD
+-cd $root/work/ || exit 1
+-if [ -d nginx.org ]; then
+-    cd nginx.org/ || exit 1
+-    hg pull || exit 1
+-    hg update --clean || exit 1
+-    cd ..
+-else
+-    hg clone http://hg.nginx.org/nginx.org || exit 1
+-fi
+-cd nginx.org/ || exit 1
+-hg purge --config extensions.purge= || exit 1
+-find xml/en/docs -name 'ngx_http_api_module.xml' -delete
+-rm xml/en/docs/njs/*
+-$nginx_xml2pod xml/en/docs || exit 1
+-cd $curdir || exit 1
+-
+-echo "restydoc-index $root/work/nginx.org"
+-$restydoc_index --outdir bundle $root/work/nginx.org || exit 1
+-
+-echo "restydoc-index $root/doc/lua-5.1.5"
+-$restydoc_index --outdir bundle $root/doc/lua-5.1.5 || exit 1
+-
+-echo "restydoc-index $root/doc/LuaJIT-2.1"
+-$restydoc_index --outdir bundle $root/doc/LuaJIT-2.1 || exit 1
+-
+-# generate restydoc index from openresty docs
+-
+-for indir in bundle/*/; do
+-    #echo "processing directory $indir ..."
+-    if [ "$indir" == "bundle/pod/" ]; then
+-        continue
+-    fi
+-    if [ "$indir" == "bundle/nginx-$main_ver/" ]; then
+-        continue
+-    fi
+-    echo "restydoc-index --outdir bundle $indir"
+-    $restydoc_index --outdir $curdir/bundle $indir || exit 1
+-done
+-
+-cd $curdir || exit 1
++#curdir=$PWD
++#cd $root/work/ || exit 1
++#if [ -d nginx.org ]; then
++#    cd nginx.org/ || exit 1
++#    hg pull || exit 1
++#    hg update --clean || exit 1
++#    cd ..
++#else
++#    hg clone http://hg.nginx.org/nginx.org || exit 1
++#fi
++#cd nginx.org/ || exit 1
++#hg purge --config extensions.purge= || exit 1
++#find xml/en/docs -name 'ngx_http_api_module.xml' -delete
++#rm xml/en/docs/njs/*
++#$nginx_xml2pod xml/en/docs || exit 1
++#cd $curdir || exit 1
++
++#echo "restydoc-index $root/work/nginx.org"
++#$restydoc_index --outdir bundle $root/work/nginx.org || exit 1
++
++#echo "restydoc-index $root/doc/lua-5.1.5"
++#$restydoc_index --outdir bundle $root/doc/lua-5.1.5 || exit 1
++
++#echo "restydoc-index $root/doc/LuaJIT-2.1"
++#$restydoc_index --outdir bundle $root/doc/LuaJIT-2.1 || exit 1
++
++## generate restydoc index from openresty docs
++
++#for indir in bundle/*/; do
++#    #echo "processing directory $indir ..."
++#    if [ "$indir" == "bundle/pod/" ]; then
++#        continue
++#    fi
++#    if [ "$indir" == "bundle/nginx-$main_ver/" ]; then
++#        continue
++#    fi
++#    echo "restydoc-index --outdir bundle $indir"
++#    $restydoc_index --outdir $curdir/bundle $indir || exit 1
++#done
++
++#cd $curdir || exit 1
+ #find bundle -name '*.md' -delete
+ #find bundle -name '*.markdown' -delete
+ #find bundle -name '*.wiki' -delete
+-find bundle -name '*~' -delete
+-find bundle -name '.*' -exec rm -rv {} +
+-find bundle -name '*.orig' -delete
++#find bundle -name '*~' -delete
++#find bundle -name '.*' -exec rm -rv {} +
++#find bundle -name '*.orig' -delete
+ #find bundle -name '*.yml' -delete
+ #find bundle -name '*.ini' -delete
+ #find bundle -name '*.sql' -delete
+-- 
+2.47.0
+

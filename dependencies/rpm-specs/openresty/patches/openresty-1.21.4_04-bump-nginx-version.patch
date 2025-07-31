@@ -1,0 +1,28 @@
+From 18a59f67cbc17ddfca10d1a9af6bd00a1f6f103f Mon Sep 17 00:00:00 2001
+From: An Tran <tkan145@gmail.com>
+Date: Mon, 19 Feb 2024 17:01:21 +1000
+Subject: [PATCH 1/1] Bump nginx version
+
+---
+ util/mirror-tarballs | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/util/mirror-tarballs b/util/mirror-tarballs
+index 8c83975..56c900a 100755
+--- a/util/mirror-tarballs
++++ b/util/mirror-tarballs
+@@ -28,9 +28,9 @@ fi
+ #################################
+ 
+ ver="$main_ver"
+-$root/util/get-tarball "https://github.com/nginx/nginx/tarball/release-$ver" -O nginx-release-$ver.tar.gz || exit 1
++$root/util/get-tarball "https://github.com/nginx/nginx/tarball/release-$ver-product-2" -O nginx-release-$ver.tar.gz || exit 1
+ tar -xzvf nginx-release-$ver.tar.gz || exit 1
+-mv nginx-nginx-release-$ver nginx-$ver || exit 1
++mv nginx-nginx-release-$ver-* nginx-$ver || exit 1
+ cd nginx-$ver || exit 1
+ mv docs/text/README ./ || exit 1
+ mv auto/configure ./ || exit 1
+-- 
+2.47.0
+

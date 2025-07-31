@@ -1,5 +1,5 @@
 {
-  "$schema": "http://apicast.io/policy-v1.1/schema#manifest#",
+  "$schema": "http://apicast.io/policy-v1.1/schema",
   "name": "TLS Client Certificate Validation",
   "summary": "Validate certificates provided by the client during TLS handshake (HTTPS).",
   "description": [
@@ -10,7 +10,6 @@
     "type": "object",
     "definitions": {
       "certificate": {
-        "$id": "#/definitions/certificate",
         "type": "object",
         "properties": {
           "pem_certificate": {
@@ -21,7 +20,6 @@
         }
       },
       "store": {
-        "$id": "#/definitions/store",
         "type": "array",
         "items": {
           "$ref": "#/definitions/certificate"
@@ -33,6 +31,85 @@
         "$ref": "#/definitions/store",
         "title": "Certificate Whitelist",
         "description": "Individual certificates and CA certificates to be whitelisted."
+      },
+      "allow_partial_chain": {
+        "description": "Allow certificate verification with only an intermediate certificate",
+        "type": "boolean",
+        "default": true
+      },
+      "revocation_check_type": {
+        "title": "Certificate Revocation Check type",
+        "type": "string",
+        "oneOf": [
+          {
+            "enum": [
+              "ocsp"
+            ],
+            "title": "Enables OCSP validation of the client certificate."
+          },
+          {
+            "enum": [
+              "crl"
+            ],
+            "title": "Use certificates revocation list (CRL) in the PEM format to verify client certificates."
+          },
+          {
+            "enum": [
+              "none"
+            ],
+            "title": "Do not check for certificate recovation status"
+          }
+        ],
+        "default": "none"
+      }
+    },
+    "dependencies": {
+      "revocation_check_type": {
+        "oneOf": [
+          {
+            "properties": {
+              "revocation_check_type": {
+                "enum": [
+                  "none"
+                ]
+              }
+            }
+          },
+          {
+            "properties": {
+              "revocation_check_type": {
+                "enum": [
+                  "crl"
+                ]
+              },
+              "revoke_list": {
+                "title": "Certificate RevokeList",
+                "description": "Individual certificates and CA certificates to be revoked.",
+                "$ref": "#/definitions/store"
+              }
+            }
+          },
+          {
+            "properties": {
+              "revocation_check_type": {
+                "enum": [
+                  "ocsp"
+                ]
+              },
+              "ocsp_responder_url": {
+                "title": "OCSP Responder URL ",
+                "description": "Overrides the URL of the OCSP responder specified in the “Authority Information Access” certificate extension for validation of client certificates. ",
+                "type": "string"
+              },
+              "cache_ttl": {
+                "title": "Max TTL for cached OCSP response",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3600
+              }
+            }
+          }
+        ]
       }
     }
   }

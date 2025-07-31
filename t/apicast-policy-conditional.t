@@ -225,3 +225,120 @@ yay, api backend
 --- error_code: 200
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: conditional policy combined with on-failed policy
+This test shows that conditional policies can be used in conjunction with an
+on-failed policy that will return a 419 when one or more policies in the chain
+fail to load. In this test, we will attempt to load an example policy that
+does not exist.
+--- configuration
+{
+  "services": [
+    {
+      "id": 42,
+      "proxy": {
+        "policy_chain": [
+          {
+            "name": "apicast.policy.conditional",
+            "configuration": {
+              "condition": {
+                "operations": [
+                  {
+                    "left": "{{ uri }}",
+                    "left_type": "liquid",
+                    "op": "==",
+                    "right": "/",
+                    "right_type": "plain"
+                  }
+                ]
+              },
+              "policy_chain": [
+                {
+                  "name": "example",
+                  "version": "1.0",
+                  "configuration": {}
+                },
+                {
+                  "name": "on_failed",
+                  "version": "builtin",
+                  "configuration": {
+                    "error_status_code": 419
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "apicast.policy.echo"
+          }
+        ]
+      }
+    }
+  ]
+}
+--- request
+GET /
+--- error_code: 419
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: conditional policy combined with on-failed policy
+With this test, the on-failed policy only triggers if the condition is met
+(request path match "/get").
+--- configuration
+{
+  "services": [
+    {
+      "id": 42,
+      "proxy": {
+        "policy_chain": [
+          {
+            "name": "apicast.policy.conditional",
+            "configuration": {
+              "condition": {
+                "operations": [
+                  {
+                    "left": "{{ uri }}",
+                    "left_type": "liquid",
+                    "op": "==",
+                    "right": "/get",
+                    "right_type": "plain"
+                  }
+                ]
+              },
+              "policy_chain": [
+                {
+                  "name": "example",
+                  "version": "1.0",
+                  "configuration": {}
+                },
+                {
+                  "name": "on_failed",
+                  "version": "builtin",
+                  "configuration": {
+                    "error_status_code": 419
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "apicast.policy.echo"
+          }
+        ]
+      }
+    }
+  ]
+}
+--- pipelined_requests eval
+["GET /","GET /get"]
+--- response_body eval
+["GET / HTTP/1.1\n",""]
+--- error_code eval
+[200, 419]
+--- no_error_log
+[error]

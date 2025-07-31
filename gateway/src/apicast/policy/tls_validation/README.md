@@ -1,10 +1,11 @@
 # TLS Validation policy
 
-This policy can validate TLS Client Certificate against a whitelist.
+This policy can validate TLS Client Certificate against a whitelist and Certificate Revocation List (CRL)
 
-Whitelist expects PEM formatted CA or Client certificates.
-It is not necessary to have the full certificate chain, just partial matches are allowed.
-For example you can add to the whitelist just leaf client certificates without the whole bundle with a CA certificate.
+* Whitelist expects PEM formatted CA or Client certificates.
+* Revocation List expects PEM formatted certificates.
+
+It is not necessary to have the full certificate chain, just partial matches are allowed. For example you can add to the whitelist just leaf client certificates without the whole bundle with a CA certificate. However, you can change this behaviour with `allow_partial_chain`
 
 ## Configuration
 
@@ -18,6 +19,7 @@ NOTE: This policy is not compatible with `APICAST_PATH_ROUTING` or `APICAST_PATH
 
 ## Example
 
+* Allow certificate verification with only an intermediate certificate.
 ```
 {
   "name": "apicast.policy.tls_validation",
@@ -25,6 +27,69 @@ NOTE: This policy is not compatible with `APICAST_PATH_ROUTING` or `APICAST_PATH
     "whitelist": [
       { "pem_certificate": ""-----BEGIN CERTIFICATE----- XXXXXX -----END CERTIFICATE-----"}
     ]
+  }
+}
+```
+
+* Use full certificate chain to verify client certificate
+```
+{
+  "name": "apicast.policy.tls_validation",
+  "configuration": {
+    "whitelist": [
+      { "pem_certificate": ""-----BEGIN CERTIFICATE----- XXXXXX -----END CERTIFICATE-----"}
+    ],
+    "allow_partial_chain": false
+  }
+}
+```
+
+With Certificate Revocation List (CRL)
+
+```
+{
+  "name": "apicast.policy.tls_validation",
+  "configuration": {
+    "whitelist": [
+      { "pem_certificate": ""-----BEGIN CERTIFICATE----- XXXXXX -----END CERTIFICATE-----"}
+    ],
+    "revocation_check_type": "crl",
+    "revoke_list": [
+      { "pem_certificate": ""-----BEGIN X509 CRL ----- XXXXXX -----END X509 CRL-----"}
+    ]
+  }
+}
+```
+
+Checking certificate status with Online Certificate Status Protocol (OCSP). The responder url is
+extracted from the certificate.
+
+NOTE: When validating a client certificate with OCSP, APIcast requires the client to send the certificate chain
+(i.e. if the certificate is signed with an intermediate certificate, the client needs to send both the client certificate + the intermediate certificate)
+
+```
+{
+  "name": "apicast.policy.tls_validation",
+  "configuration": {
+    "whitelist": [
+      { "pem_certificate": ""-----BEGIN CERTIFICATE----- XXXXXX -----END CERTIFICATE-----"}
+    ],
+    "revocation_check_type": "ocsp",
+  }
+}
+```
+
+Overwrite OCSP responder URL
+
+```
+{
+  "name": "apicast.policy.tls_validation",
+  "configuration": {
+    "whitelist": [
+      { "pem_certificate": ""-----BEGIN CERTIFICATE----- XXXXXX -----END CERTIFICATE-----"}
+    ],
+    "revocation_check_type": "ocsp",
+    "ocsp_responder_url": "http://<ocsp-server>:<port>"
   }
 }
 ```

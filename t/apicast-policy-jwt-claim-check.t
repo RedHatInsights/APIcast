@@ -645,3 +645,222 @@ the URI is not longer valid at all, and JWT is not expected to work correctly.
 --- no_error_log
 [error]
 
+
+
+=== TEST 8: JWT claim with extended context. Access jwt clain via jwt prefix
+--- backend
+  location /transactions/oauth_authrep.xml {
+    content_by_lua_block {
+      ngx.exit(200)
+    }
+  }
+
+--- configuration
+{
+  "oidc": [
+    {
+      "issuer": "https://example.com/auth/realms/apicast",
+      "config": { "id_token_signing_alg_values_supported": [ "RS256" ] },
+      "keys": { "somekid": { "pem": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALClz96cDQ965ENYMfZzG+Acu25lpx2K\nNpAALBQ+catCA59us7+uLY5rjQR6SOgZpCz5PJiKNAdRPDJMXSmXqM0CAwEAAQ==\n-----END PUBLIC KEY-----", "alg": "RS256" } }
+    }
+  ],
+  "services": [
+    {
+      "id": 42,
+      "backend_version": "oauth",
+      "backend_authentication_type": "service_token",
+      "backend_authentication_value": "token-value",
+      "proxy": {
+        "authentication_method": "oidc",
+        "oidc_issuer_endpoint": "https://example.com/auth/realms/apicast",
+        "api_backend": "http://test:$TEST_NGINX_SERVER_PORT/",
+        "proxy_rules": [
+          { "pattern": "/", "http_method": "GET", "metric_system_name": "hits", "delta": 1 }
+        ],
+        "policy_chain": [
+          {
+            "name": "apicast.policy.jwt_claim_check",
+            "configuration": {
+              "rules" : [{
+                  "operations": [
+                    {"op": "==", "jwt_claim": "foo", "jwt_claim_type": "plain", "value": "{{jwt.foo}}", "value_type": "liquid"}
+                  ],
+                  "combine_op": "and",
+                  "methods": ["GET"],
+                  "resource": "/confidential"
+              }],
+              "enable_extended_context": true
+            }
+          },
+          { "name": "apicast.policy.apicast" }
+        ]
+      }
+    }
+  ]
+}
+--- upstream
+  location /confidential {
+     content_by_lua_block {
+       ngx.say('yay, api backend');
+     }
+  }
+--- request
+GET /confidential
+--- more_headers eval
+::authorization_bearer_jwt('audience', {
+  foo => "test_foo",
+  bar => "foo",
+  roles => [ 'director', 'manager' ]
+}, 'somekid')
+--- error_code: 200
+--- response_body
+yay, api backend
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: JWT claim with extended context. Access request query from the context
+--- backend
+  location /transactions/oauth_authrep.xml {
+    content_by_lua_block {
+      ngx.exit(200)
+    }
+  }
+
+--- configuration
+{
+  "oidc": [
+    {
+      "issuer": "https://example.com/auth/realms/apicast",
+      "config": { "id_token_signing_alg_values_supported": [ "RS256" ] },
+      "keys": { "somekid": { "pem": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALClz96cDQ965ENYMfZzG+Acu25lpx2K\nNpAALBQ+catCA59us7+uLY5rjQR6SOgZpCz5PJiKNAdRPDJMXSmXqM0CAwEAAQ==\n-----END PUBLIC KEY-----", "alg": "RS256" } }
+    }
+  ],
+  "services": [
+    {
+      "id": 42,
+      "backend_version": "oauth",
+      "backend_authentication_type": "service_token",
+      "backend_authentication_value": "token-value",
+      "proxy": {
+        "authentication_method": "oidc",
+        "oidc_issuer_endpoint": "https://example.com/auth/realms/apicast",
+        "api_backend": "http://test:$TEST_NGINX_SERVER_PORT/",
+        "proxy_rules": [
+          { "pattern": "/", "http_method": "GET", "metric_system_name": "hits", "delta": 1 }
+        ],
+        "policy_chain": [
+          {
+            "name": "apicast.policy.jwt_claim_check",
+            "configuration": {
+              "rules" : [{
+                  "operations": [
+                    {"op": "==", "jwt_claim": "foo", "jwt_claim_type": "plain", "value": "{{original_request.query | split: \"check=\" | last}}", "value_type": "liquid"}
+                  ],
+                  "combine_op": "and",
+                  "methods": ["GET"],
+                  "resource": "/confidential"
+              }],
+              "enable_extended_context": true
+            }
+          },
+          { "name": "apicast.policy.apicast" }
+        ]
+      }
+    }
+  ]
+}
+--- upstream
+  location /confidential {
+     content_by_lua_block {
+       ngx.say('yay, api backend');
+     }
+  }
+--- request
+GET /confidential?check=test_foo
+--- more_headers eval
+::authorization_bearer_jwt('audience', {
+  foo => "test_foo",
+  bar => "foo",
+  roles => [ 'director', 'manager' ]
+}, 'somekid')
+--- error_code: 200
+--- response_body
+yay, api backend
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: JWT claim with extended context and liquid type. Access request
+query from the context
+--- backend
+  location /transactions/oauth_authrep.xml {
+    content_by_lua_block {
+      ngx.exit(200)
+    }
+  }
+
+--- configuration
+{
+  "oidc": [
+    {
+      "issuer": "https://example.com/auth/realms/apicast",
+      "config": { "id_token_signing_alg_values_supported": [ "RS256" ] },
+      "keys": { "somekid": { "pem": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALClz96cDQ965ENYMfZzG+Acu25lpx2K\nNpAALBQ+catCA59us7+uLY5rjQR6SOgZpCz5PJiKNAdRPDJMXSmXqM0CAwEAAQ==\n-----END PUBLIC KEY-----", "alg": "RS256" } }
+    }
+  ],
+  "services": [
+    {
+      "id": 42,
+      "backend_version": "oauth",
+      "backend_authentication_type": "service_token",
+      "backend_authentication_value": "token-value",
+      "proxy": {
+        "authentication_method": "oidc",
+        "oidc_issuer_endpoint": "https://example.com/auth/realms/apicast",
+        "api_backend": "http://test:$TEST_NGINX_SERVER_PORT/",
+        "proxy_rules": [
+          { "pattern": "/", "http_method": "GET", "metric_system_name": "hits", "delta": 1 }
+        ],
+        "policy_chain": [
+          {
+            "name": "apicast.policy.jwt_claim_check",
+            "configuration": {
+              "rules" : [{
+                  "operations": [
+                    {"op": "==", "jwt_claim": "{{jwt.foo}}", "jwt_claim_type": "liquid", "value": "{{original_request.query | split: \"check=\" | last}}", "value_type": "liquid"}
+                  ],
+                  "combine_op": "and",
+                  "methods": ["GET"],
+                  "resource": "/confidential"
+              }],
+              "enable_extended_context": true
+            }
+          },
+          { "name": "apicast.policy.apicast" }
+        ]
+      }
+    }
+  ]
+}
+--- upstream
+  location /confidential {
+     content_by_lua_block {
+       ngx.say('yay, api backend');
+     }
+  }
+--- request
+GET /confidential?check=test_foo
+--- more_headers eval
+::authorization_bearer_jwt('audience', {
+  foo => "test_foo",
+  bar => "foo",
+  roles => [ 'director', 'manager' ]
+}, 'somekid')
+--- error_code: 200
+--- response_body
+yay, api backend
+--- no_error_log
+[error]

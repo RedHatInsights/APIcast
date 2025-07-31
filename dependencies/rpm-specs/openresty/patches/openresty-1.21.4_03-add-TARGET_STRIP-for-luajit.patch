@@ -1,0 +1,48 @@
+From f576cc2fc2b0cb5945b00bc57e192f6de7deae4b Mon Sep 17 00:00:00 2001
+From: Eloy Coto <eloy.coto@gmail.com>
+Date: Sun, 26 Jan 2020 21:10:05 +0100
+Subject: [PATCH] add TARGET_STRIP for luajit
+
+Signed-off-by: Eloy Coto <eloy.coto@gmail.com>
+---
+ util/configure | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/util/configure b/util/configure
+index 8303b4d..a8f94b4 100755
+--- a/util/configure
++++ b/util/configure
+@@ -133,6 +133,7 @@ my $cores;
+ my $luajit_xcflags = '';
+ my $user_luajit_xcflags;
+ my $user_luajit_ldflags;
++my $user_luajit_target_strip;
+ my $no_luajit_lua52;
+ my $no_luajit_gc64;
+ 
+@@ -277,6 +278,9 @@ for my $opt (@ARGV) {
+     } elsif ($opt =~ /^--with-luajit-ldflags=(.*)/) {
+         $user_luajit_ldflags .= " $1";
+ 
++    } elsif ($opt =~ /^--with-luajit-target-strip=(.*)/) {
++        $user_luajit_target_strip .= " $1";
++
+     } elsif ($opt =~ /^--without-luajit-lua52/) {
+         $no_luajit_lua52 = 1;
+ 
+@@ -712,7 +716,11 @@ _END_
+ 
+         cd $luajit_src;
+ 
+-        my $extra_opts = ' TARGET_STRIP=@: CCDEBUG=-g';
++        my $target_strip = 'CFLAGS="" TARGET_STRIP=@:';
++        if ($user_luajit_target_strip) {
++            $target_strip = "CFLAGS='' TARGET_STRIP=: $user_luajit_target_strip ";
++        }
++        my $extra_opts = " $target_strip CCDEBUG=-g";
+ 
+        {
+             my $comp = ($cc || 'cc');
+-- 
+2.47.0
+
