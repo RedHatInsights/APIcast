@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal AS base
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6 AS base
 
 ARG OPENRESTY_RPM_VERSION="1.21.4-1.el8"
 ARG LUAROCKS_VERSION="2.3.0"
@@ -24,19 +24,26 @@ ENV AUTO_UPDATE_INTERVAL=0 \
     # The $HOME is not set by default, but some applications needs this variable
     HOME=/opt/app-root/src \
     PATH=/opt/app-root/src/bin:/opt/app-root/bin:$PATH \
-    PLATFORM="el8"
+    PLATFORM="el9"
 
-RUN microdnf update
+RUN microdnf update -y
 
-RUN microdnf install -y 'yum-utils'
+RUN microdnf install -y 'yum-utils' dnf
 
 RUN yum-config-manager --add-repo http://packages.dev.3sca.net/dev_packages_3sca_net.repo
 
-RUN PKGS="openresty-resty-${OPENRESTY_RPM_VERSION} openresty-opentelemetry-${OPENRESTY_RPM_VERSION} openssl-devel git gcc make curl tar openresty-opentracing-${OPENRESTY_RPM_VERSION} openresty-${OPENRESTY_RPM_VERSION} luarocks-${LUAROCKS_VERSION} opentracing-cpp-devel-1.3.0 libopentracing-cpp1-1.3.0 jaegertracing-cpp-client-${JAEGERTRACING_CPP_CLIENT_RPM_VERSION}" && \
+RUN dnf install -y --allowerasing --setopt=tsflags=nodocs \
+        openresty-resty-${OPENRESTY_RPM_VERSION} \
+        openresty-opentelemetry-${OPENRESTY_RPM_VERSION} \
+        openssl-devel git gcc make curl tar \
+        openresty-opentracing-${OPENRESTY_RPM_VERSION} \
+        openresty-${OPENRESTY_RPM_VERSION} \
+        luarocks-${LUAROCKS_VERSION} \
+        opentracing-cpp-devel-1.3.0 \
+        libopentracing-cpp1-1.3.0 \
+        jaegertracing-cpp-client-${JAEGERTRACING_CPP_CLIENT_RPM_VERSION} && \
     mkdir -p "$HOME" && \
-    microdnf -y --setopt=tsflags=nodocs install $PKGS && \
-    rpm -V $PKGS && \
-    microdnf clean all -y
+    dnf clean all -y
 
 COPY site_config.lua /usr/share/lua/5.1/luarocks/site_config.lua
 COPY config-*.lua /usr/local/openresty/config-5.1.lua
@@ -65,8 +72,10 @@ RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/man
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/membphis/lua-resty-ipmatcher-0.6.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/fffonion/lua-resty-openssl-1.5.1-1.src.rock
 
-RUN microdnf -y remove yum-utils openssl-devel perl-Git-* git annobin-* gcc-plugin-annobin-* gcc luarocks && \
-    rm -rf /var/cache/yum && microdnf clean all -y && \
+RUN dnf -y remove --noautoremove yum-utils openssl-devel git luarocks && \
+    dnf -y autoremove && \
+    rm -rf /var/cache/yum /var/cache/dnf && \
+    dnf clean all -y && \
     rm -rf ./*
 
 COPY gateway/. /opt/app-root/src/

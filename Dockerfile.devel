@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8:8.10-1754489414
+FROM registry.access.redhat.com/ubi9/ubi:9.6
 
 ARG OPENRESTY_RPM_VERSION="1.21.4-1.el8"
 ARG LUAROCKS_VERSION="2.3.0"
@@ -9,15 +9,15 @@ WORKDIR /tmp
 ENV APP_ROOT=/opt/app-root \
     HOME=/opt/app-root/src \
     PATH=/opt/app-root/src/bin:/opt/app-root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-    PLATFORM="el8"
+    PLATFORM="el9"
 
 RUN sed -i s/enabled=./enabled=0/g /etc/yum/pluginconf.d/subscription-manager.conf
 
-RUN yum upgrade -y
+RUN yum upgrade -y --assumeyes --quiet
 
 RUN dnf install -y 'dnf-command(config-manager)'
 
-RUN yum install -y \
+RUN yum install -y --allowerasing \
         gcc make git which curl iputils bind-utils expat-devel kernel-headers openssl-devel m4 \
         libyaml libyaml-devel perl-local-lib perl-App-cpanminus
 
