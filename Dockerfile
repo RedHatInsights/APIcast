@@ -16,7 +16,11 @@ LABEL summary="The 3scale API gateway (APIcast) is an OpenResty application, whi
 LABEL com.redhat.component="3scale-amp-apicast-gateway-container" \
       name="3scale-amp2/apicast-gateway-rhel8" \
     version="1.22.0"\
-      maintainer="3scale-engineering@redhat.com"
+      maintainer="3scale-engineering@redhat.com" \
+      vendor="Red Hat, Inc." \
+      release="1" \
+      url="https://github.com/3scale/APIcast" \
+      distribution-scope="private"
 
 WORKDIR /tmp
 
