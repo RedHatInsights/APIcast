@@ -10,13 +10,14 @@ LABEL summary="The 3scale API gateway (APIcast) is an OpenResty application, whi
       io.k8s.display-name="3scale API gateway (APIcast)" \
       io.openshift.expose-services="8080:apicast" \
       io.openshift.tags="integration, nginx, lua, openresty, api, gateway, 3scale, rhamp" \
-      maintainer="3scale-engineering@redhat.com"
-
-# Labels consumed by Red Hat build service
-LABEL com.redhat.component="3scale-amp-apicast-gateway-container" \
+      maintainer="3scale-engineering@redhat.com" \
+      com.redhat.component="3scale-amp-apicast-gateway-container" \
       name="3scale-amp2/apicast-gateway-rhel8" \
-    version="1.22.0"\
-      maintainer="3scale-engineering@redhat.com"
+      version="1.22.0" \
+      vendor="Red Hat, Inc." \
+      release="1" \
+      url="https://github.com/3scale/APIcast" \
+      distribution-scope="private"
 
 WORKDIR /tmp
 
