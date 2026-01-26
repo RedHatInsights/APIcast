@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7-1768783948 AS base
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7-1769056855 AS base
 
 ARG OPENRESTY_RPM_VERSION="1.21.4-1.el8"
 ARG LUAROCKS_VERSION="2.3.0"
