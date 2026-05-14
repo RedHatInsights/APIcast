@@ -1,7 +1,7 @@
 # Camel PROXY
 
 Development environment to test integration between APIcast and proxies built
-on top of [Camel framework](https://camel.apache.org/components/4.8.x/netty-component.html)
+on top of [Camel framework](https://camel.apache.org/components/4.18.x/netty-component.html)
 
 This dev environment uses [Camel Netty Proxy example](https://github.com/zregvart/camel-netty-proxy).
 Any request that is received using the HTTP PROXY protocol,

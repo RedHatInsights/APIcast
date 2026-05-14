@@ -5,7 +5,7 @@ Test framework used for integration testing in APIcast:
 Data-driven test scaffold for Nginx C module and OpenResty Lua library development.
 
 Documentation on this framework: 
-[Automated Testing · Programming OpenResty (gitbooks.io)](https://openresty.gitbooks.io/programming-openresty/content/testing/index.html).
+[Automated Testing · Programming OpenResty](https://github.com/openresty/programming-openresty/tree/master/testing).
 
 APIcast specific extension/fork of this framework: [3scale/Test-APIcast](https://github.com/3scale/Test-APIcast):
 APIcast testing framework using `Test::Nginx`.
