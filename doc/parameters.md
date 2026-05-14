@@ -205,7 +205,7 @@ before the client is throttled by adding latency.
 **Default:** \<empty\> (_false_)
 
 When set to _true_, APIcast will log the response code of the response returned by the API backend in 3scale. In some plans this information can later be consulted from the 3scale admin portal.
-Find more information about the Response Codes feature on the [3scale support site](https://access.redhat.com/documentation/en-us/red_hat_3scale/2-saas/html-single/admin_portal_guide/index#response-codes-tracking).
+Find more information about the Response Codes feature on the [3scale support site](https://docs.redhat.com/en/documentation/red_hat_3scale_api_management/2.14/html/admin_portal_guide/setting-up-and-evaluating-the-threescale-response-codes-log-for-your-api_analytics-for-threescale-apis).
 
 ### `APICAST_SERVICES_FILTER_BY_URL`
 **Value:** a PCRE (Perl Compatible Regular Expression)

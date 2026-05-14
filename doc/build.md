@@ -23,7 +23,7 @@ Lua Dependencies are defined in [`apicast-VERSION.rockspec`](https://github.com/
 APIcast is using [docker](https://www.docker.com/) to build the APIcast runtime image.
 You must have docker installed and available on your system.
 
-The development image used is based on [UBI](https://developers.redhat.com/products/rhel/ubi).
+The development image used is based on [UBI](https://catalog.redhat.com/en/software/base-images).
 It builds on heavy OpenShift base images.
 In future releases, we will leverage multistage docker files and use a minimal runtime image.
 
