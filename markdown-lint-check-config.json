@@ -5,6 +5,12 @@
         },
         {
             "pattern": "^.*.bar"
+        },
+        {
+            "pattern": "^https://docs\\.redhat\\.com"
+        },
+        {
+            "pattern": "^https://access\\.redhat\\.com/documentation"
         }
     ],
     "replacementPatterns": [
