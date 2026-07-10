@@ -41,7 +41,8 @@ RUN dnf install -y --allowerasing --setopt=tsflags=nodocs \
         openresty-${OPENRESTY_RPM_VERSION} \
         luarocks-${LUAROCKS_VERSION} \
         opentracing-cpp-devel-1.3.0 \
-        libopentracing-cpp1-1.3.0 && \
+        libopentracing-cpp1-1.3.0 \
+        perl-interpreter && \
     mkdir -p "$HOME" && \
     dnf clean all -y
 
@@ -115,10 +116,15 @@ COPY --from=base /etc/group /etc/group
 
 WORKDIR /opt/app-root/app
 
+COPY --from=base /usr/bin/perl /usr/bin/perl
+COPY --from=base /usr/share/perl5 /usr/share/perl5
+COPY --from=base /usr/lib64 /usr/lib64
+
 USER 1001
 
 ENV LUA_CPATH "./?.so;/usr/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/loadall.so;/usr/local/lib64/lua/5.1/?.so"
 ENV LUA_PATH "/usr/lib64/lua/5.1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/*/?.lua;;"
+ENV PATH="/opt/app-root/bin:/opt/app-root/src/bin:/usr/local/openresty/bin:${PATH}"
 
 WORKDIR /opt/app-root
 ENTRYPOINT ["container-entrypoint"]
