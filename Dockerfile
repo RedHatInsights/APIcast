@@ -37,7 +37,7 @@ RUN dnf5 config-manager addrepo --from-repofile=http://packages.dev.3sca.net/dev
 RUN dnf install -y --allowerasing --setopt=tsflags=nodocs \
         openresty-opentelemetry-${OPENRESTY_RPM_VERSION} \
         gzip \
-        openssl-devel git gcc make tar \
+        openssl-devel git gcc sed make tar \
         openresty-${OPENRESTY_RPM_VERSION} \
         luarocks-${LUAROCKS_VERSION} \
         opentracing-cpp-devel-1.3.0 \
@@ -116,6 +116,7 @@ COPY --from=base /etc/group /etc/group
 
 WORKDIR /opt/app-root/app
 
+COPY --from=base /usr/bin/sed /usr/bin/sed
 COPY --from=base /usr/bin/perl /usr/bin/perl
 COPY --from=base /usr/share/perl5 /usr/share/perl5
 COPY --from=base /usr/lib64 /usr/lib64
