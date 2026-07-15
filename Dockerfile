@@ -127,6 +127,7 @@ USER 1001
 ENV LUA_CPATH "./?.so;/usr/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/loadall.so;/usr/local/lib64/lua/5.1/?.so"
 ENV LUA_PATH "/usr/lib64/lua/5.1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/*/?.lua;;"
 ENV PATH="/opt/app-root/bin:/opt/app-root/src/bin:/usr/local/openresty/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/opt/app-root/lib"
 
 WORKDIR /opt/app-root
 ENTRYPOINT ["container-entrypoint"]
