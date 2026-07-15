@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/hi/core-runtime:2.42-openssl-fips-builder AS base
+FROM registry.access.redhat.com/hi/core-runtime:2.43-openssl-fips-builder AS base
 
 USER root
 
@@ -105,7 +105,7 @@ RUN ln --verbose --symbolic /opt/app-root/src /opt/app-root/app && \
     ln --verbose --symbolic /opt/app-root/bin /opt/app-root/scripts
 
 # Runtime
-FROM registry.access.redhat.com/hi/core-runtime:2.42-openssl-fips
+FROM registry.access.redhat.com/hi/core-runtime:2.43-openssl-fips
 
 COPY --from=base /usr/local/openresty /usr/local/openresty
 COPY --from=base /usr/local/share/lua /usr/local/share/lua
