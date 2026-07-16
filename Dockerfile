@@ -120,11 +120,13 @@ COPY --from=base /usr/bin/sed /usr/bin/sed
 COPY --from=base /usr/bin/perl /usr/bin/perl
 COPY --from=base /usr/share/perl5 /usr/share/perl5
 COPY --from=base /usr/lib64/perl5 /usr/lib64/perl5
-COPY --from=base /usr/lib64/libperl.so* /usr/lib64/
 COPY --from=base /usr/lib64/lua /usr/lib64/lua
-COPY --from=base /usr/lib64/libcrypt.so.2* /usr/lib64/
 
-RUN ldconfig
+USER root
+RUN --mount=type=bind,from=base,source=/usr/lib64,target=/mnt/lib64 \
+    cp -a /mnt/lib64/libperl.so* /usr/lib64/ && \
+    cp -a /mnt/lib64/libcrypt.so.2* /usr/lib64/ && \
+    ldconfig
 
 USER 1001
 
