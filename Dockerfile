@@ -1,9 +1,8 @@
-FROM registry.access.redhat.com/hi/core-runtime:2.43-openssl-fips-builder AS base
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1782797275 AS base
 
-USER root
-
-ARG OPENRESTY_RPM_VERSION="1.27.1-1.el9"
-ARG LUAROCKS_VERSION="3.12.0"
+ARG OPENRESTY_RPM_VERSION="1.21.4-1.el8"
+ARG LUAROCKS_VERSION="2.3.0"
+ARG JAEGERTRACING_CPP_CLIENT_RPM_VERSION="0.3.1-13.el8"
 
 LABEL summary="The 3scale API gateway (APIcast) is an OpenResty application, which consists of two parts: NGINX configuration and Lua files." \
       description="APIcast is not a standalone API gateway therefore it needs connection to the 3scale API management platform. The container includes OpenResty and uses LuaRocks to install dependencies (rocks are installed in the application folder)." \
@@ -13,7 +12,7 @@ LABEL summary="The 3scale API gateway (APIcast) is an OpenResty application, whi
       io.openshift.tags="integration, nginx, lua, openresty, api, gateway, 3scale, rhamp" \
       maintainer="3scale-engineering@redhat.com" \
       com.redhat.component="3scale-amp-apicast-gateway-container" \
-      name="3scale-amp2/apicast-gateway-rhel9" \
+      name="3scale-amp2/apicast-gateway-rhel8" \
       version="1.22.0" \
       vendor="Red Hat, Inc." \
       release="1" \
@@ -28,26 +27,24 @@ ENV AUTO_UPDATE_INTERVAL=0 \
     PATH=/opt/app-root/src/bin:/opt/app-root/bin:$PATH \
     PLATFORM="el9"
 
-RUN dnf update -y --no-best
+RUN microdnf update -y
 
-RUN dnf install -y dnf5-plugins
+RUN microdnf install -y 'yum-utils' dnf
 
-RUN dnf5 config-manager addrepo --from-repofile=http://packages.dev.3sca.net/dev_packages_3sca_net.repo
+RUN yum-config-manager --add-repo http://packages.dev.3sca.net/dev_packages_3sca_net.repo
 
 RUN dnf install -y --allowerasing --setopt=tsflags=nodocs \
+        openresty-resty-${OPENRESTY_RPM_VERSION} \
         openresty-opentelemetry-${OPENRESTY_RPM_VERSION} \
-        gzip \
-        openssl-devel git gcc sed make tar \
+        openssl-devel git gcc make curl tar \
+        openresty-opentracing-${OPENRESTY_RPM_VERSION} \
         openresty-${OPENRESTY_RPM_VERSION} \
         luarocks-${LUAROCKS_VERSION} \
         opentracing-cpp-devel-1.3.0 \
         libopentracing-cpp1-1.3.0 \
-        perl-interpreter && \
+        jaegertracing-cpp-client-${JAEGERTRACING_CPP_CLIENT_RPM_VERSION} && \
     mkdir -p "$HOME" && \
     dnf clean all -y
-
-# Try to install jaegertracing if available (optional for Jaeger tracing support)
-RUN dnf install -y --skip-unavailable jaegertracing-cpp-client || true
 
 COPY site_config.lua /usr/share/lua/5.1/luarocks/site_config.lua
 COPY config-*.lua /usr/local/openresty/config-5.1.lua
@@ -76,9 +73,9 @@ RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/man
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/membphis/lua-resty-ipmatcher-0.6.1-0.src.rock
 RUN luarocks install --deps-mode=none --tree /usr/local https://luarocks.org/manifests/fffonion/lua-resty-openssl-1.5.1-1.src.rock
 
-RUN dnf -y remove --noautoremove openssl-devel git luarocks && \
+RUN dnf -y remove --noautoremove yum-utils openssl-devel git luarocks && \
     dnf -y autoremove && \
-    rm -rf /var/cache/dnf && \
+    rm -rf /var/cache/yum /var/cache/dnf && \
     dnf clean all -y && \
     rm -rf ./*
 
@@ -104,36 +101,12 @@ RUN ln --verbose --symbolic /opt/app-root/src/bin /opt/app-root/bin && \
 RUN ln --verbose --symbolic /opt/app-root/src /opt/app-root/app && \
     ln --verbose --symbolic /opt/app-root/bin /opt/app-root/scripts
 
-# Runtime
-FROM registry.access.redhat.com/hi/core-runtime:2.43-openssl-fips
-
-COPY --from=base /usr/local/openresty /usr/local/openresty
-COPY --from=base /usr/local/share/lua /usr/local/share/lua
-COPY --from=base /usr/local/lib64/lua /usr/local/lib64/lua
-COPY --from=base /opt/app-root /opt/app-root
-COPY --from=base /etc/passwd /etc/passwd
-COPY --from=base /etc/group /etc/group
-
 WORKDIR /opt/app-root/app
-
-COPY --from=base /usr/bin/sed /usr/bin/sed
-COPY --from=base /usr/bin/perl /usr/bin/perl
-COPY --from=base /usr/share/perl5 /usr/share/perl5
-COPY --from=base /usr/lib64/perl5 /usr/lib64/perl5
-COPY --from=base /usr/lib64/lua /usr/lib64/lua
-
-USER root
-RUN --mount=type=bind,from=base,source=/usr/lib64,target=/mnt/lib64 \
-    cp -a /mnt/lib64/libperl.so* /usr/lib64/ && \
-    cp -a /mnt/lib64/libcrypt.so.2* /usr/lib64/ && \
-    ldconfig
 
 USER 1001
 
 ENV LUA_CPATH "./?.so;/usr/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/loadall.so;/usr/local/lib64/lua/5.1/?.so"
 ENV LUA_PATH "/usr/lib64/lua/5.1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/*/?.lua;;"
-ENV PATH="/opt/app-root/bin:/opt/app-root/src/bin:/usr/local/openresty/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/opt/app-root/lib"
 
 WORKDIR /opt/app-root
 ENTRYPOINT ["container-entrypoint"]
