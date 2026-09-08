@@ -2,9 +2,8 @@ FROM registry.access.redhat.com/hi/core-runtime:2.43-openssl-fips-builder AS bas
 
 USER root
 
-ARG OPENRESTY_RPM_VERSION="1.21.4-1.el8"
-ARG LUAROCKS_VERSION="2.3.0"
-ARG JAEGERTRACING_CPP_CLIENT_RPM_VERSION="0.3.1-13.el8"
+ARG OPENRESTY_RPM_VERSION="1.27.1-1.el9"
+ARG LUAROCKS_VERSION="3.12.0"
 
 LABEL summary="The 3scale API gateway (APIcast) is an OpenResty application, which consists of two parts: NGINX configuration and Lua files." \
       description="APIcast is not a standalone API gateway therefore it needs connection to the 3scale API management platform. The container includes OpenResty and uses LuaRocks to install dependencies (rocks are installed in the application folder)." \
