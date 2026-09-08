@@ -40,11 +40,8 @@ RUN dnf install -y --allowerasing --setopt=tsflags=nodocs \
         gzip \
         openssl-devel git gcc sed make tar \
         openssl-devel git gcc make curl tar \
-        openresty-opentracing-${OPENRESTY_RPM_VERSION} \
         openresty-${OPENRESTY_RPM_VERSION} \
         luarocks-${LUAROCKS_VERSION} \
-        opentracing-cpp-devel-1.3.0 \
-        libopentracing-cpp1-1.3.0 \
         perl-interpreter && \
     mkdir -p "$HOME" && \
     dnf clean all -y
