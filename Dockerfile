@@ -3,6 +3,7 @@ FROM registry.access.redhat.com/hi/core-runtime:2.43-openssl-fips-builder AS bas
 USER root
 
 ARG OPENRESTY_RPM_VERSION="1.27.1-1.el9"
+ARG OPENRESTY_OPENTRACING_RPM_VERSION="1.21.4-1.el8"
 ARG LUAROCKS_VERSION="3.12.0"
 
 LABEL summary="The 3scale API gateway (APIcast) is an OpenResty application, which consists of two parts: NGINX configuration and Lua files." \
@@ -37,8 +38,8 @@ RUN dnf5 config-manager addrepo --from-repofile=http://packages.dev.3sca.net/dev
 RUN dnf install -y --allowerasing --setopt=tsflags=nodocs \
         openresty-opentelemetry-${OPENRESTY_RPM_VERSION} \
         gzip \
-        openssl-devel git gcc sed make tar \
-        openresty-opentracing-${OPENRESTY_RPM_VERSION} \
+        openssl-devel git gcc make tar \
+        openresty-opentracing-${OPENRESTY_OPENTRACING_RPM_VERSION} \
         openresty-${OPENRESTY_RPM_VERSION} \
         luarocks-${LUAROCKS_VERSION} \
         perl-interpreter && \
