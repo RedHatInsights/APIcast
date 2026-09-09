@@ -35,11 +35,10 @@ RUN dnf install -y dnf5-plugins
 RUN dnf5 config-manager addrepo --from-repofile=http://packages.dev.3sca.net/dev_packages_3sca_net.repo
 
 RUN dnf install -y --allowerasing --setopt=tsflags=nodocs \
-        openresty-resty-${OPENRESTY_RPM_VERSION} \
         openresty-opentelemetry-${OPENRESTY_RPM_VERSION} \
         gzip \
         openssl-devel git gcc sed make tar \
-        openssl-devel git gcc make curl tar \
+        openresty-opentracing-${OPENRESTY_RPM_VERSION} \
         openresty-${OPENRESTY_RPM_VERSION} \
         luarocks-${LUAROCKS_VERSION} \
         perl-interpreter && \
