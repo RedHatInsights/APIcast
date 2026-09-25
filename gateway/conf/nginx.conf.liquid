@@ -49,8 +49,8 @@ http {
   # Enabling the Lua code cache is strongly encouraged for production use
   # Disabling it should only be done for testing and development purposes
   lua_code_cache {{  lua_code_cache | default: 'on' }};
-  lua_max_running_timers {{ lua_running_timers | default: 2048 }};
-  lua_max_pending_timers {{ lua_pending_timers | default: 4096 }};
+  lua_max_running_timers {{ lua_running_timers | default: env.APICAST_MAX_RUNNING_TIMERS | default: 2048 }};
+  lua_max_pending_timers {{ lua_pending_timers | default: env.APICAST_MAX_PENDING_TIMERS | default: 4096 }};
   lua_socket_pool_size {{ lua_socket_pool_size | default: 512 }};
   server_names_hash_bucket_size 128;
 
