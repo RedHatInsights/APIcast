@@ -550,6 +550,31 @@ Sets the maximum size of shared memory used by batcher policy. The accepted [siz
 
 Sets the size of the buffer used for handling the response received from the proxied server. This variable sets both [`proxy_buffer` NGINX directive](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffers) and [`proxy_buffer_size` NGINX directive](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffer_size). By default, the buffer size is equal to one memory page. This is either 4 KiB or 8 KiB, depending on a platform.
 
+### `APICAST_MAX_RUNNING_TIMERS`
+
+**Default:** 2048
+**Value:** positive integers
+**Example:** "4096"
+
+Sets the maximum number of timers currently running in an NGINX worker process, as
+defined by the [`lua_max_running_timers` directive](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#lua_max_running_timers).
+
+Note that an invalid value makes NGINX fail to start, rather than falling back to
+the default.
+
+### `APICAST_MAX_PENDING_TIMERS`
+
+**Default:** 4096
+**Value:** positive integers
+**Example:** "8192"
+
+Sets the maximum number of pending timers in an NGINX worker process, as defined by
+the [`lua_max_pending_timers` directive](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#lua_max_pending_timers).
+Pending timers are those that have been created but have not yet expired.
+
+Note that an invalid value makes NGINX fail to start, rather than falling back to
+the default.
+
 ### `OPENTELEMETRY`
 
 This environment variable enables NGINX instrumentation using OpenTelemetry tracing library.
